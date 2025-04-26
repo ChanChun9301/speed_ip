@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Результаты теста скорости</title>
+</head>
+<body>
+    <h1>Результаты теста скорости</h1>
+    {% if results %}
+        <table>
+            <thead>
+                <tr>
+                    <th>IP-адрес</th>
+                    <th>Пинг (мс)</th>
+                    <th>Скорость загрузки (Кбит/с)</th>
+                    <th>Скорость выгрузки (Кбит/с)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{{ result.ip_address }}</td>
+                        <td>
+                            {% if result.ping_ms is not None %}
+                                {{ result.ping_ms }}
+                            {% else %}
+                                Ошибка
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.download_speed_kbps is not None %}
+                                {{ result.download_speed_kbps }}
+                            {% else %}
+                                Ошибка
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.upload_speed_kbps is not None %}
+                                {{ result.upload_speed_kbps }}
+                            {% else %}
+                                Ошибка
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Нет результатов для отображения.</p>
+    {% endif %}
+    <p><a href="{% url 'speed_test' %}">Вернуться к форме</a></p>
+</body>
+</html>

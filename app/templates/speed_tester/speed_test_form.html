@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Тест скорости IP-адресов</title>
+</head>
+<body>
+    <h1>Введите IP-адреса для тестирования</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Запустить тест</button>
+    </form>
+</body>
+</html>
