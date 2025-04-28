@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<!-- saved from url=(0012)about:srcdoc -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  
+  
+
+    <link rel="apple-touch-icon" type="image/png" href="https://cpwebassets.codepen.io/assets/favicon/apple-touch-icon-5ae1a0698dcc2402e9712f7d01ed509a57814f994c660df9f7a952f3060705ee.png">
+
+    <meta name="apple-mobile-web-app-title" content="CodePen">
+
+    <link rel="icon" type="image/x-icon" href="https://cpwebassets.codepen.io/assets/favicon/favicon-aec34940fbc1a6e787974dcd360f2c6b63348d4b1f4e06c77743096d55480f33.ico">
+
+    <link rel="mask-icon" type="image/x-icon" href="https://cpwebassets.codepen.io/assets/favicon/logo-pin-b4b4269c16397ad2f0f7a01bcdf513a1994f4c94b8af2f191c09eb0d601762b1.svg" color="#111">
+
+
+
+  
+    <script src="https://cpwebassets.codepen.io/assets/common/stopExecutionOnTimeout-2c7831bb44f98c1391d6a4ffda0e1fd302503391ca806e7fcc7b9b87197aec26.js"></script>
+
+
+  <title>Dropdown using &lt;details&gt; and &lt;input type="radio"&gt;</title>
+
+    <link rel="canonical" href="https://codepen.io/havardob/pen/vYyVXRK">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://public.codepenassets.com/css/reset-2.0.min.css">
+
+  
+  
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+*,
+*:after,
+*:before {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  font-size: 1.125rem;
+  background-color: #f5f7fb;
+  color: #4f5d7e;
+  font-weight: 500;
+}
+
+fieldset {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 5rem;
+  margin-bottom: 5rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+legend {
+  margin-bottom: 0.25rem;
+}
+
+details {
+  position: relative;
+}
+details summary {
+  background-color: #fff;
+  border: 2px solid #b5bfd9;
+  padding: 0.75rem 0.75rem;
+  position: relative;
+  border-radius: 8px;
+  padding-right: 3rem;
+  cursor: pointer;
+  list-style: none;
+}
+details summary::-webkit-details-marker {
+  display: none;
+}
+details summary:focus {
+  outline: 0;
+  box-shadow: 0 0 0 4px #b5c9fc;
+}
+details summary:hover, details summary:focus {
+  border-color: #2260ff;
+}
+details summary span {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  transform-origin: center center;
+}
+details[open] summary {
+  border-color: #2260ff;
+  box-shadow: 0 0 0 4px #b5c9fc;
+}
+details[open] summary span {
+  transform: scaleY(-1) translateY(50%);
+}
+details div {
+  margin-top: 8px;
+  background-color: #fff;
+  border: 2px solid #b5bfd9;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem;
+  box-shadow: 0 3px 7px 0 #c8cfe1;
+}
+details div label {
+  position: relative;
+  cursor: pointer;
+}
+details div input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+       appearance: none;
+  visibility: hidden;
+  position: absolute;
+}
+details div input:checked + span {
+  background-color: #e9efff;
+  color: #2260ff;
+}
+details div span:hover {
+  background-color: #e9efff;
+}
+details div span {
+  display: block;
+  padding: 0.625rem;
+  border-radius: 8px;
+  margin-top: 0.25rem;
+}
+</style>
+
+  <script>
+  window.console = window.console || function(t) {};
+</script>
+
+  
+  
+</head>
+
+<body translate="no">
+  <fieldset>
+	<legend>Dropdown</legend>
+	<details open="">
+		<summary>Choose language...<span class="material-icons-round">arrow_drop_down</span></summary>
+		<div>
+			<label>
+				<input type="radio" name="radio">
+				<span>HTML</span>
+			</label>
+			<label>
+				<input type="radio" name="radio" checked="">
+				<span>CSS/Sass</span>
+			</label>
+			<label>
+				<input type="radio" name="radio">
+				<span>JavaScript</span>
+			</label>
+			<label>
+				<input type="radio" name="radio">
+				<span>.NET</span>
+			</label>
+			<label>
+				<input type="radio" name="radio">
+				<span>C#</span>
+			</label>
+			<label>
+				<input type="radio" name="radio">
+				<span>PHP</span>
+			</label>
+		</div>
+	</details>
+</fieldset>
+  
+      <script id="rendered-js">
+// Nope
+//# sourceURL=pen.js
+    </script>
+
+  
+
+
+
+</body></html>

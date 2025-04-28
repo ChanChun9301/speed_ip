@@ -1,0 +1,192 @@
+import speedtest
+
+def test_internet_speed():
+    try:
+        st = speedtest.Speedtest()
+        print("Testing internet speed...")
+
+        # Perform the download speed test
+        download_speed = st.download() / 1000000  # Convert to Mbps
+
+        # Perform the upload speed test
+        upload_speed = st.upload() / 1000000  # Convert to Mbps
+
+        # Print the results
+        print("Download Speed: {:.2f} Mbps".format(download_speed))
+        print("Upload Speed: {:.2f} Mbps".format(upload_speed))
+
+    except speedtest.SpeedtestException as e:
+        print("An error occurred during the speed test:", str(e))
+
+test_internet_speed()
+
+
+
+
+=======================
+models.py 
+
+
+
+
+from django.db import models
+
+class SearchQuery(models.Model):
+    text_input = models.CharField(max_length=255)
+    dork_command = models.CharField(max_length=255, blank=True, null=True)
+    full_query = models.TextField()
+    search_date = models.DateTimeField(auto_now_add=True)
+    results_count = models.IntegerField(null=True, blank=True) # Можно добавить количество результатов, если это возможно получить
+
+    def __str__(self):
+        return self.full_query
+
+class ExploitDbDork(models.Model):
+    category = models.CharField(max_length=255)
+    description = models.TextField()
+    dork_command = models.CharField(max_length=255, unique=True)
+    link = models.URLField(blank=True, null=True) # Ссылка на страницу Exploit-DB
+
+    def __str__(self):
+        return f"{self.category}: {self.dork_command}"
+
+
+==============================
+forms.py
+
+
+from django import forms
+
+DORK_CHOICES = [
+    ('', 'Выберите команду (необязательно)'),
+    ('site:', 'site:'),
+    ('inurl:', 'inurl:'),
+    ('intitle:', 'intitle:'),
+    ('intext:', 'intext:'),
+    ('filetype:', 'filetype:'),
+    # Добавьте другие распространенные команды по мере необходимости
+]
+
+class GoogleDorkingForm(forms.Form):
+    text_input = forms.CharField(label='Поисковый запрос', max_length=255)
+    dork_command = forms.ChoiceField(label='Команда Dorking', choices=DORK_CHOICES, required=False)
+
+
+=====================
+views.py
+
+
+import requests
+from bs4 import BeautifulSoup
+from django.shortcuts import render, redirect
+from django.urls import reverse
+from .forms import GoogleDorkingForm
+from .models import SearchQuery, ExploitDbDork
+
+def google_dorking_view(request):
+    form = GoogleDorkingForm()
+    results = []
+    if request.method == 'POST':
+        form = GoogleDorkingForm(request.POST)
+        if form.is_valid():
+            text_input = form.cleaned_data['text_input']
+            dork_command = form.cleaned_data['dork_command']
+
+            full_query = f"{dork_command}{text_input}" if dork_command else text_input
+            search_query = SearchQuery(text_input=text_input, dork_command=dork_command, full_query=full_query)
+            search_query.save()
+
+            # *** ВНИМАНИЕ: Google не приветствует автоматизированные запросы (скрейпинг). ***
+            # *** Это может привести к блокировке вашего IP-адреса. ***
+            # *** Используйте Google Custom Search API (платный/бесплатный с ограничениями) для легального доступа к результатам поиска. ***
+
+            # Пример очень простого (и ненадежного для реального использования) скрейпинга:
+            try:
+                url = f"https://www.google.com/search?q={full_query.replace(' ', '+')}"
+                headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'}
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()
+                soup = BeautifulSoup(response.content, 'html.parser')
+                search_results = soup.find_all('div', class_='tF2Cxc') # Пример класса, может меняться
+                results = [{'title': res.find('h3').text if res.find('h3') else 'Нет заголовка',
+                            'link': res.find('a')['href'] if res.find('a') else '#'} for res in search_results[:10]] # Ограничим первыми 10 результатами
+                search_query.results_count = len(results)
+                search_query.save()
+
+            except requests.exceptions.RequestException as e:
+                results = [{'error': f"Ошибка при выполнении поиска: {e}"}]
+
+            return render(request, 'google_dorking.html', {'form': form, 'results': results})
+
+    return render(request, 'google_dorking.html', {'form': form})
+
+def search_history_view(request):
+    history = SearchQuery.objects.order_by('-search_date')
+    return render(request, 'search_history.html', {'history': history})
+
+def update_exploit_db_dorks(request):
+    url = "https://www.exploit-db.com/google-hacking-database"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36'}
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, 'html.parser')
+        table = soup.find('table', {'class': 'table'})
+        if table:
+            tbody = table.find('tbody')
+            rows = tbody.find_all('tr')
+            for row in rows:
+                columns = row.find_all('td')
+                if len(columns) >= 3:
+                    category = columns[1].text.strip()
+                    description = columns[2].text.strip()
+                    link_tag = columns[2].find('a')
+                    link = f"https://www.exploit-db.com{link_tag['href']}" if link_tag and 'href' in link_tag.attrs else None
+                    dork_command = columns[3].text.strip()
+
+                    ExploitDbDork.objects.update_or_create(
+                        dork_command=dork_command,
+                        defaults={'category': category, 'description': description, 'link': link}
+                    )
+            return redirect(reverse('exploit_db_dorks_view'))
+        else:
+            return render(request, 'error.html', {'message': 'Не удалось найти таблицу на странице Exploit-DB.'})
+    except requests.exceptions.RequestException as e:
+        return render(request, 'error.html', {'message': f'Ошибка при получении данных с Exploit-DB: {e}'})
+
+def exploit_db_dorks_view(request):
+    dorks = ExploitDbDork.objects.all().order_by('category', 'dork_command')
+    return render(request, 'exploit_db_dorks.html', {'dorks': dorks})
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Dorking</title>
+</head>
+<body>
+    <h1>Google Dorking</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Поиск</button>
+    </form>
+
+    {% if results %}
+        <h2>Результаты поиска:</h2>
+        <ul>
+            {% for result in results %}
+                {% if result.error %}
+                    <li>{{ result.error }}</li>
+                {% else %}
+                    <li><a href="{{ result.link }}">{{ result.title }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+</body>
+</html>
