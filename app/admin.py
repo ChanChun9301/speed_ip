@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import SpeedTestResult, SearchQuery, ExploitDbDork
+from .models import *
 
 @admin.register(SpeedTestResult)
 class SpeedTestResultAdmin(admin.ModelAdmin):
@@ -62,3 +62,5 @@ class ExploitDbDorkAdmin(admin.ModelAdmin):
             'fields': ('link',)
         }),
     )
+
+admin.site.register(Commands)

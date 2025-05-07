@@ -43,7 +43,11 @@ class CustomUserCreationForm(forms.ModelForm):
         return user
 
 class IPAddressForm(forms.Form):
-    ip_addresses = forms.CharField(widget=forms.Textarea, help_text='Введите IP-адреса каждый на новой строке.')
+    ip_addresses = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
+        label='IP Salgylaryny Giriziň (her setirde bir):',
+        help_text='Her IP salgysyny täze setirde giriziň.'
+    )
 
 DORK_CHOICES = [
     ('', 'Выберите команду (необязательно)'),

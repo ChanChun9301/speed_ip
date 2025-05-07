@@ -1,52 +1,41 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Результаты теста скорости</title>
-</head>
-<body>
-    <h1>Результаты теста скорости</h1>
+{% extends "layouts.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Tizlik Synagynyň Netijeleri</h1>
     {% if results %}
-        <table>
-            <thead>
-                <tr>
-                    <th>IP-адрес</th>
-                    <th>Пинг (мс)</th>
-                    <th>Скорость загрузки (Кбит/с)</th>
-                    <th>Скорость выгрузки (Кбит/с)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for result in results %}
-                    <tr>
-                        <td>{{ result.ip_address }}</td>
-                        <td>
-                            {% if result.ping_ms is not None %}
-                                {{ result.ping_ms }}
+        <ul class="list-group">
+            {% for result in results %}
+                <li class="list-group-item">
+                    <strong>IP Salgysy:</strong> {{ result.ip_address }}
+                    {% if result.ping_ms is not None %}
+                        <p><strong>Ping (ms):</strong>
+                            {% if result.ping_ms == -1 %}
+                                <span class="text-danger">Wagt gutardy</span>
                             {% else %}
-                                Ошибка
+                                <span class="text-info">{{ result.ping_ms|floatformat:2 }} ms</span>
                             {% endif %}
-                        </td>
-                        <td>
-                            {% if result.download_speed_kbps is not None %}
-                                {{ result.download_speed_kbps }}
-                            {% else %}
-                                Ошибка
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if result.upload_speed_kbps is not None %}
-                                {{ result.upload_speed_kbps }}
-                            {% else %}
-                                Ошибка
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        </p>
+                    {% else %}
+                        <p><strong>Ping (ms):</strong> <span class="text-danger">Ping wagtynda ýalňyşlyk</span></p>
+                    {% endif %}
+                    {% if result.download_speed_kbps is not None %}
+                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-success">{{ result.download_speed_kbps|floatformat:2 }} kbps</span></p>
+                    {% else %}
+                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-warning">Kesgitlenmedi</span></p>
+                    {% endif %}
+                    {% if result.upload_speed_kbps is not None %}
+                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-primary">{{ result.upload_speed_kbps|floatformat:2 }} kbps</span></p>
+                    {% else %}
+                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-warning">Kesgitlenmedi</span></p>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'speed_test' %}" class="btn btn-primary mt-3">Gaýtadan synag et</a>
     {% else %}
-        <p>Нет результатов для отображения.</p>
+        <p>Görkezmäge netije ýok.</p>
+        <a href="{% url 'speed_test' %}" class="btn btn-primary mt-3">Synaga gaýt</a>
     {% endif %}
-    <p><a href="{% url 'speed_test' %}">Вернуться к форме</a></p>
-</body>
-</html>
+</div>
+{% endblock %}

@@ -1,14 +1,27 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Тест скорости IP-адресов</title>
-</head>
-<body>
-    <h1>Введите IP-адреса для тестирования</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Запустить тест</button>
-    </form>
-</body>
-</html>
+{% extends "layouts.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-lg p-4 rounded-lg">
+        <div class="card-header bg-success ">
+            <h1 class="mb-0 text-center text-white"><i class="fas fa-network-wired mr-2"></i> IP Tizligini Barlamak</h1>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    {% comment %} {{ form.ip_address.label_tag:"IP Salgysyny Giriziň:" class="form-label fw-bold" }} {% endcomment %}
+                    {{ form.ip_address }}
+                    {{ form.as_p }}
+                    {% if form.ip_address.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.ip_address.errors }}</div>
+                    {% endif %}
+                </div>
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg rounded-pill"><i class="fas fa-play mr-2"></i> Synagy Başlatmak</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

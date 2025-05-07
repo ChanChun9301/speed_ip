@@ -4,6 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from .forms import *
 from .models import *
+from django.http import JsonResponse
 import subprocess
 import platform
 from django.contrib.auth import login, authenticate
@@ -12,6 +13,7 @@ from pyspeedtest import SpeedTest
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login as django_login
 from django.contrib.auth import logout as django_logout
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.template import loader, Context, RequestContext
 from django.http import HttpResponse
@@ -25,6 +27,12 @@ def auth_view(request):
     login_form = AuthenticationForm()
     register_form = CustomUserCreationForm()
     return render(request, 'speed_tester/login.html', {'login_form': login_form, 'register_form': register_form})
+
+def get_commands(request):
+    commands = Commands.objects.all()
+    data = [{'id': cmd.id, 'dork_command': cmd.command, 'description': cmd.description} for cmd in commands]
+    return JsonResponse({'commands': data})
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -67,13 +75,13 @@ def logout_view(request):
     return render(request, 'speed_tester/login.html', {'login_form': login_form})  
 
 def run_speed_test(ip_address):
-    """Выполняет ping и измерение скорости для заданного IP-адреса с учетом ОС и кодировки."""
+    """Berlen IP salgysy üçin ping we tizlik ölçemegini ýerine ýetirýär."""
     results = {'ip_address': ip_address, 'ping_ms': None, 'download_speed_kbps': None, 'upload_speed_kbps': None}
 
     param = '-n' if platform.system().lower() == 'windows' else '-c'
     command = ['ping', param, '4', ip_address]
 
-    # Пинг
+    # Ping
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_bytes, stderr_bytes = process.communicate(timeout=10)
@@ -89,7 +97,6 @@ def run_speed_test(ip_address):
 
         if process.returncode == 0:
             lines = stdout.split('\n')
-            print(lines)
             for line in lines:
                 if 'avg' in line or 'Average' in line or 'Среднее' in line:
                     parts = line.split('=')[1].split('/') if '=' in line else line.split(': ')[1].split(', ')[0].split('ms')[0].replace('мс', '').strip()
@@ -98,19 +105,19 @@ def run_speed_test(ip_address):
                     except ValueError:
                         pass
         else:
-            print(f"Ошибка при пинге {ip_address} (код {process.returncode}): {stderr}")
+            print(f"Pingde ýalňyşlyk {ip_address} (kod {process.returncode}): {stderr}")
             results['ping_ms'] = None
     except subprocess.TimeoutExpired:
-        results['ping_ms'] = -1  # Указываем, что время ожидания истекло
-        print(f"Пинг {ip_address} истекло время ожидания.")
+        results['ping_ms'] = -1  # Wagt gutarandygyny görkezýäris
+        print(f"Ping {ip_address} wagty gutardy.")
     except Exception as e:
-        print(f"Произошла неожиданная ошибка при пинге {ip_address}: {e}")
+        print(f"Ping wagtynda garaşylmadyk ýalňyşlyk ýüze çykdy {ip_address}: {e}")
         results['ping_ms'] = None
 
-    # Измерение скорости download/upload (требует подключения к интернету на сервере)
+    # Ýüklemek/ýüklemek tizligini ölçemek (serwerde internet birikmesini talap edýär)
     try:
         process = subprocess.Popen(['speedtest-cli', '--simple'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_bytes, stderr_bytes = process.communicate(timeout=30)  # Увеличим таймаут
+        stdout_bytes, stderr_bytes = process.communicate(timeout=30)  # Taýmaudy köpeldýäris
         stdout = stdout_bytes.decode('utf-8', errors='ignore').strip()
         stderr = stderr_bytes.decode('utf-8', errors='ignore').strip()
 
@@ -127,46 +134,41 @@ def run_speed_test(ip_address):
                         pass
                 elif 'Download:' in part:
                     try:
-                        download_cli = float(part.split(': ')[1].split(' Mbit/s')[0]) * 1000  # Convert to kbps
+                        download_cli = float(part.split(': ')[1].split(' Mbit/s')[0]) * 1000  # kbps-a öwrüýäris
                     except ValueError:
                         pass
                 elif 'Upload:' in part:
                     try:
-                        upload_cli = float(part.split(': ')[1].split(' Mbit/s')[0]) * 1000  # Convert to kbps
+                        upload_cli = float(part.split(': ')[1].split(' Mbit/s')[0]) * 1000  # kbps-a öwrüýäris
                     except ValueError:
                         pass
             results['ping_ms'] = ping_cli
             results['download_speed_kbps'] = download_cli
             results['upload_speed_kbps'] = upload_cli
         else:
-            print(f"Ошибка speedtest-cli для {ip_address}: {stderr}")
+            print(f"speedtest-cli üçin ýalňyşlyk {ip_address}: {stderr}")
 
     except Exception as e:
-        print(f"Произошла ошибка при запуске speedtest-cli: {e}")
+        print(f"speedtest-cli işledilende ýalňyşlyk ýüze çykdy: {e}")
         results['download_speed_kbps'] = None
         results['upload_speed_kbps'] = None
 
     return results
 
-
 def speed_test_view(request):
     if request.method == 'POST':
         form = IPAddressForm(request.POST)
         if form.is_valid():
-            ip_addresses_text = form.cleaned_data['ip_addresses']
-            ip_addresses = [ip.strip() for ip in ip_addresses_text.split('\n') if ip.strip()]
-            results = []
-            for ip in ip_addresses:
-                test_result = run_speed_test(ip)
-                print(test_result)
-                SpeedTestResult.objects.create(
-                    ip_address=test_result['ip_address'],
-                    ping_ms=test_result['ping_ms'],
-                    download_speed_kbps=test_result['download_speed_kbps'],
-                    upload_speed_kbps=test_result['upload_speed_kbps']
-                )
-                results.append(test_result)
-            return render(request, 'speed_tester/results.html', {'results': results})
+            ip_address = form.cleaned_data['ip_addresses']
+            test_result = run_speed_test(ip_address)
+            print(test_result)
+            SpeedTestResult.objects.create(
+                ip_address=test_result['ip_address'],
+                ping_ms=test_result['ping_ms'],
+                download_speed_kbps=test_result['download_speed_kbps'],
+                upload_speed_kbps=test_result['upload_speed_kbps']
+            )
+            return render(request, 'speed_tester/results.html', {'results': [test_result]})
     else:
         form = IPAddressForm()
     return render(request, 'speed_tester/speed_test_form.html', {'form': form})
@@ -177,6 +179,7 @@ def history_view(request):
     history = SpeedTestResult.objects.all().order_by('-timestamp')[:10]
     return render(request, 'speed_tester/history.html', {'history': history})
 
+@login_required
 def google_dorking_view(request):
     form = GoogleDorkingForm()
     results = []
@@ -186,8 +189,8 @@ def google_dorking_view(request):
             text_input = form.cleaned_data['text_input']
             dork_command = form.cleaned_data['dork_command']
 
-            full_query = f"{dork_command}{text_input}" if dork_command else text_input
-            search_query = SearchQuery(text_input=text_input, dork_command=dork_command, full_query=full_query)
+            full_query = f"{dork_command} {text_input}".strip() if dork_command else text_input
+            search_query = SearchQuery(user=request.user, text_input=text_input, dork_command=dork_command, full_query=full_query)
             search_query.save()
 
             # *** ВНИМАНИЕ: Google не приветствует автоматизированные запросы (скрейпинг). ***
@@ -214,8 +217,9 @@ def google_dorking_view(request):
 
     return render(request, 'google_dorking.html', {'form': form})
 
+@login_required
 def search_history_view(request):
-    history = SearchQuery.objects.order_by('-search_date')
+    history = SearchQuery.objects.filter(user=request.user).order_by('-search_date')
     return render(request, 'search_history.html', {'history': history})
 
 def update_exploit_db_dorks(request):

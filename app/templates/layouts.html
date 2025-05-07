@@ -1,0 +1,230 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tor kömekçi</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            padding-top: 80px; /* Adjust for fixed navbar height */
+            background-color: #f8f9fa;
+        }
+        {% comment %} .navbar {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        } {% endcomment %}
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .nav-link {
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover {
+            color: #007bff;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+        }
+        h1 {
+            color: #343a40;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 5px; /* Spacing between input elements in the group */
+        }
+        .form-control {
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 0.75rem;
+        }
+        .form-control:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .btn-success, .btn-info {
+            border-radius: 5px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .btn-success:hover, .btn-info:hover {
+            transform: scale(1.03);
+        }
+        #output {
+            margin-top: 30px;
+            font-weight: bold;
+            color: #28a745; /* Green color for success message */
+            text-align: center;
+        }
+        .network-background-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1; /* Behind the content */
+        }
+    </style>
+</head>
+<body>
+    <canvas width="1920" height="963" class="network-background-canvas">
+        
+    </canvas>
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <img src="{% static 'logo.png'%}" width="90px" ></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="{% url 'home' %}"><i class="fas fa-home mr-1"></i> Baş sahypa <span class="sr-only">(current)</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'speed_test' %}"><i class="fas fa-globe mr-1"></i>Toruň tizligi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'speed_test_history' %}"><i class="fas fa-globe mr-1"></i>Gözlegleriň taryhy</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-network-wired mr-1"></i>Trafigiň agramy</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}
+
+    {% endblock %}
+    
+
+<script>
+    ((c) => {
+        const options = {
+            num: 50,
+            particle: {color: 'rgba(0, 123, 255, 0.6)', // Blue particles
+                       szMin: 0.5, szMax: 1,
+                       spMin: 0.05, spMax: 0.5},
+            link: {color: 'rgba(0, 173, 255, 0.3)', maxDist: 160} // Light blue links
+        };
+
+        const pi2   = Math.PI*2;
+        const degrad = Math.PI / 180.0;
+        const ctx = c.getContext('2d');
+        let w = c.width = window.innerWidth;
+        let h = c.height = window.innerHeight;
+
+        class Particle {
+            constructor() {
+                this.p = {x: Math.random() * c.width, y: Math.random() * c.height};
+                this.s = options.particle.spMin + Math.random() * options.particle.spMax;
+                this.r = options.particle.szMin + Math.random() * options.particle.szMax;
+                this.d = Math.random() * pi2;
+                this.v = {x: Math.cos(this.d) * this.s, y: Math.sin(this.d) * this.s};
+            }
+            setDir(d) {
+                this.d = d;
+                this.v.x = Math.cos(this.d) * this.s;
+                this.v.y = Math.sin(this.d) * this.s;
+            }
+            wrap() {
+                if(this.p.x < 0 || this.p.x > w || this.p.y < 0 || this.p.y > h)
+                    this.setDir(this.d + Math.random() * degrad * 5);
+                if( this.p.x < 0) this.p.x += w;
+                if( this.p.x > w) this.p.x -= w;
+                if( this.p.y < 0) this.p.y += h;
+                if( this.p.y > h) this.p.y -= h;
+            }
+            update() {
+                this.p.x += this.v.x;
+                this.p.y += this.v.y;
+                this.wrap();
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.p.x, this.p.y, this.r, 0, pi2);
+                ctx.fillStyle = options.particle.color;
+                ctx.fill();
+            }
+            drawLink(other) {
+                ctx.save();
+                ctx.globalAlpha = 1 - (this.distanceTo(other) / options.link.maxDist);
+                ctx.beginPath();
+                ctx.moveTo(this.p.x, this.p.y);
+                ctx.lineWidth = this.r;
+                ctx.lineTo(other.p.x, other.p.y);
+                ctx.strokeStyle = options.link.color;
+                ctx.stroke();
+                ctx.restore();
+            }
+            closeTo(other) {
+                let xd = other.p.x - this.p.x;
+                let yd = other.p.y - this.p.y;
+
+                return (xd*xd + yd*yd) <= (options.link.maxDist * options.link.maxDist);
+            }
+            distanceTo(other) {
+                let xd = other.p.x - this.p.x;
+                let yd = other.p.y - this.p.y;
+
+                return Math.sqrt(xd*xd + yd*yd);
+            }
+        }
+
+        const particles = [...Array(options.num)].map((_, i) => new Particle);
+
+        const resize = () => {
+            let s = {x: window.innerWidth / w, y: window.innerHeight / h};
+            w = c.width = window.innerWidth;
+            h = c.height = window.innerHeight;
+            particles.forEach((particle) => {
+                particle.p.x *= s.x;
+                particle.p.y *= s.y;
+                particle.draw();
+            });
+        };
+
+        let integrate = () => {
+            ctx.clearRect(0, 0, w, h);
+            particles.forEach((a) => {
+                a.update();
+                a.draw();
+                particles.forEach((b) => {
+                    if( a === b || !b.closeTo(a) ) return;
+                    a.drawLink(b);
+                });
+
+            });
+            window.requestAnimationFrame(integrate);
+        };
+
+        const init = () => {
+            c.classList.add('network-background-canvas');
+            document.body.insertAdjacentElement('beforeend', c);
+            resize();
+            window.addEventListener('resize', resize);
+            window.requestAnimationFrame(integrate);
+        };
+
+        document.addEventListener('DOMContentLoaded', init);
+    })(document.createElement('canvas'));
+</script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

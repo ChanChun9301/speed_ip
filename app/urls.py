@@ -5,6 +5,7 @@ urlpatterns = [
     path('', index, name='home'),
     path('speed_test/', speed_test_view, name='speed_test'),
     path('history/', history_view, name='speed_test_history'),
+    path('api/commands/', get_commands, name='get_commands'),
 
     path('auth/', auth_view, name='auth'),
     path('login/', login_view, name='login'),

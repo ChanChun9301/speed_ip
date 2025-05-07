@@ -12,6 +12,14 @@ class SearchQuery(models.Model):
 
     def __str__(self):
         return f"{self.full_query} (by {self.user.username})"
+class ExploitDbDork(models.Model):
+    category = models.CharField(max_length=255)
+    description = models.TextField()
+    dork_command = models.CharField(max_length=255, unique=True)
+    link = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.category}: {self.dork_command}"
 
 class SpeedTestResult(models.Model):
     ip_address = models.CharField(max_length=100)
@@ -23,11 +31,11 @@ class SpeedTestResult(models.Model):
     def __str__(self):
         return f"Результат для {self.ip_address} от {self.timestamp}"
 
-class ExploitDbDork(models.Model):
-    category = models.CharField(max_length=255)
-    description = models.TextField()
-    dork_command = models.CharField(max_length=255, unique=True)
-    link = models.URLField(blank=True, null=True)
+
+class Commands(models.Model):
+    command = models.CharField(max_length=255, null=True)
+    description = models.TextField(blank=True)
 
     def __str__(self):
-        return f"{self.category}: {self.dork_command}"
+        return f"{self.command}: {self.description}"
+
