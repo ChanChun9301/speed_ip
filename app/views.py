@@ -42,7 +42,6 @@ def get_commands(request):
     data = [{'id': cmd.id, 'dork_command': cmd.command, 'description': cmd.description} for cmd in commands]
     return JsonResponse({'commands': data})
 
-
 def login_view(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -150,19 +149,30 @@ def run_speed_test(ip_address):
         if process.returncode == 0:
             for line in stdout.split('\n'):
                 line_lower = line.lower()
-                if any(keyword in line_lower for keyword in ['минимальное =', 'максимальное =', 'среднее =']):
+                if 'время' in line_lower and 'мс' in line_lower: # Handle individual ping times
+                    parts = line.split('время=')
+                    if len(parts) > 1:
+                        time_part = parts[1].split()[0].replace('мс', '').replace('<', '').strip()
+                        try:
+                            ping_ms = float(time_part)
+                            if results['ping_ms'] is None or ping_ms < results['ping_ms']: # Keep track of the minimum if individual times are the only option
+                                results['ping_ms'] = ping_ms
+                            print('milli sekund (время=):', ping_ms)
+                        except ValueError:
+                            print(f"Could not convert ping time (время=) to float: {time_part}")
+                elif any(keyword in line_lower for keyword in ['минимальное =', 'максимальное =', 'среднее =']):
                     parts = line.split('=')
                     print(parts)
                     if len(parts) > 1:
-                        time_part = parts[1].strip().split()[0].replace('мс', '').strip()
+                        time_part = parts[1].strip().split()[0].replace('мсек', '').strip()
                         try:
                             ping_ms = float(time_part)
                             results['ping_ms'] = ping_ms
-                            print('milli sekund:', ping_ms)
-                            break  # Assuming we found the relevant ping time
+                            print('milli sekund (мин/макс/среднее):', ping_ms)
+                            break # Found the average, no need to continue
                         except ValueError:
-                            print(f"Could not convert ping time to float: {time_part}")
-                elif any(keyword in line_lower for keyword in ['мин.', 'макс.']): # For some Russian outputs
+                            print(f"Could not convert ping time (мин/макс/среднее) to float: {time_part}")
+                elif any(keyword in line_lower for keyword in ['мин.', 'макс.']): # Keep this for other variations
                     numbers = [float(s.replace(',', '.').replace('ms', '').replace('мсек', '').strip()) for s in line.split() if s.replace(',', '').replace('.', '').isdigit()]
                     if numbers and len(numbers) >= 2:
                         results['ping_ms'] = numbers[1] # Assuming average is the second number after min/max
@@ -189,31 +199,11 @@ def run_speed_test(ip_address):
     except Exception as e:
         print(f"Unexpected ping error: {e}")
 
-    # Download Speed Test
-    download_url = f'http://{ip_address}'
-    try:
-        start_time = time.time()
-        response = requests.get(download_url, stream=True, timeout=10)
-        total_length = sum(len(chunk) for chunk in response.iter_content(chunk_size=8192))
-        download_time = time.time() - start_time
+    # Download Speed Test (commented out)
+    # ...
 
-        if download_time > 0:
-            results['download_speed_kbps'] = round((total_length / 1024) / download_time, 2)
-    except Exception as e:
-        print(f"Download error: {e}")
-
-    # Upload Speed Test
-    upload_url = f'http://{ip_address}'
-    try:
-        upload_data = b'x' * 1024 * 1024  # 1MB
-        start_time = time.time()
-        response = requests.post(upload_url, data=upload_data, timeout=10)
-        upload_time = time.time() - start_time
-
-        if upload_time > 0:
-            results['upload_speed_kbps'] = round((len(upload_data) / 1024) / upload_time, 2)
-    except Exception as e:
-        print(f"Upload error: {e}")
+    # Upload Speed Test (commented out)
+    # ...
 
     # print(results)
     return results
@@ -224,7 +214,7 @@ def speed_test_view(request):
         if form.is_valid():
             ip_address = form.cleaned_data['ip_addresses']
             test_result = run_speed_test(ip_address)
-            print(test_result['ping_ms'])
+            print(test_result)
 
              # Ensure all values are not None
             SpeedTestResult.objects.create(
@@ -239,7 +229,6 @@ def speed_test_view(request):
         form = IPAddressForm()
     
     return render(request, 'speed_tester/speed_test_form.html', {'form': form})
-
 
 def history_view(request):
     history = SpeedTestResult.objects.all().order_by('-timestamp')[:10]
@@ -315,9 +304,9 @@ def save_search(request):
     else:
         return JsonResponse({'status': 'error', 'message': 'Diňe POST isleglerine rugsat berilýär.'}, status=405)
 
-@login_required
+
 def search_history_view(request):
-    history = SearchQuery.objects.filter(user=request.user).order_by('-search_date')
+    history = SearchQuery.objects.all()
     return render(request, 'speed_tester/search_history.html', {'history': history})
 
 def update_exploit_db_dorks(request):
@@ -394,16 +383,3 @@ def search_interface(request):
     else:
         form = SearchForm()
     return render(request, 'search/search_form.html', {'form': form})
-
-def exploit_db_dork_list(request):
-    """Displays a list of Exploit-DB dorks."""
-    dorks = ExploitDbDork.objects.all().order_by('category', 'dork_command')
-    return render(request, 'exploitdb/dork_list.html', {'dorks': dorks})
-
-def exploit_db_dork_detail(request, dork_id):
-    """Displays details for a specific Exploit-DB dork."""
-    try:
-        dork = ExploitDbDork.objects.get(pk=dork_id)
-    except ExploitDbDork.DoesNotExist:
-        return render(request, 'exploitdb/dork_not_found.html', {'dork_id': dork_id}, status=404)
-    return render(request, 'exploitdb/dork_detail.html', {'dork': dork})

@@ -19,6 +19,4 @@ urlpatterns = [
     path('speed-test-results/<int:result_id>/', speed_test_results_detail, name='speed_test_results_detail'),
     path('search-queries/', search_query_list, name='search_query_list'),
     path('search/', search_interface, name='search_interface'),
-    path('exploit-db-dorks/', exploit_db_dork_list, name='exploit_db_dork_list'),
-    path('exploit-db-dorks/<int:dork_id>/', exploit_db_dork_detail, name='exploit_db_dork_detail'),
 ]

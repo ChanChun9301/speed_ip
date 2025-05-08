@@ -6,6 +6,7 @@
     {% if results %}
         <ul class="list-group">
             {% for result in results %}
+            {{result.ping_ms}}
                 <li class="list-group-item">
                     <strong>IP Salgysy:</strong> {{ result.ip_address }}
                     {% if result.ping_ms is not None %}

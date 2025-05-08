@@ -43,6 +43,10 @@ class Commands(models.Model):
     def __str__(self):
         return f"{self.command}: {self.description}"
 
+    class Meta:
+        verbose_name="Buýruk"
+        verbose_name_plural="Buýruklar"
+
 class TrafficLog(models.Model):
     method = models.CharField(max_length=10)
     path = models.CharField(max_length=255)
