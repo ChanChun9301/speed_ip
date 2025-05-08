@@ -4,35 +4,50 @@
 <div class="container mt-5">
     <h1>Tizlik Synagynyň Netijeleri</h1>
     {% if results %}
-        <ul class="list-group">
-            {% for result in results %}
-            {{result.ping_ms}}
-                <li class="list-group-item">
-                    <strong>IP Salgysy:</strong> {{ result.ip_address }}
-                    {% if result.ping_ms is not None %}
-                        <p><strong>Ping (ms):</strong>
-                            {% if result.ping_ms == -1 %}
-                                <span class="text-danger">Wagt gutardy</span>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Ugradyjyn IP Salgysy</th>
+                    <th>Ahyrky IP Salgy</th>
+                    <th>Ping (ms)</th>
+                    <th>Ýüklemek tizligi</th>
+                    <th>Ýüklemek tizligi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                    <tr>
+                        <td>{{ result.ip_address }}</td>
+                        <td>{{ result.destination_ip }}</td>
+                        <td>
+                            {% if result.ping_ms is not None %}
+                                {% if result.ping_ms == -1 %}
+                                    <span class="text-danger">Wagt gutardy</span>
+                                {% else %}
+                                    <span class="text-info">{{ result.ping_ms|floatformat:2 }} ms</span>
+                                {% endif %}
                             {% else %}
-                                <span class="text-info">{{ result.ping_ms|floatformat:2 }} ms</span>
+                                <span class="text-danger">Ping wagtynda ýalňyşlyk</span>
                             {% endif %}
-                        </p>
-                    {% else %}
-                        <p><strong>Ping (ms):</strong> <span class="text-danger">Ping wagtynda ýalňyşlyk</span></p>
-                    {% endif %}
-                    {% if result.download_speed_kbps is not None %}
-                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-success">{{ result.download_speed_kbps|floatformat:2 }} kbps</span></p>
-                    {% else %}
-                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-warning">Kesgitlenmedi</span></p>
-                    {% endif %}
-                    {% if result.upload_speed_kbps is not None %}
-                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-primary">{{ result.upload_speed_kbps|floatformat:2 }} kbps</span></p>
-                    {% else %}
-                        <p><strong>Ýüklemek tizligi:</strong> <span class="text-warning">Kesgitlenmedi</span></p>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+                        </td>
+                        <td>
+                            {% if result.download_speed_kbps is not None %}
+                                <span class="text-success">{{ result.download_speed_kbps|floatformat:2 }} kbps</span>
+                            {% else %}
+                                <span class="text-warning">Kesgitlenmedi</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if result.upload_speed_kbps is not None %}
+                                <span class="text-primary">{{ result.upload_speed_kbps|floatformat:2 }} kbps</span>
+                            {% else %}
+                                <span class="text-warning">Kesgitlenmedi</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
         <a href="{% url 'speed_test' %}" class="btn btn-primary mt-3">Gaýtadan synag et</a>
     {% else %}
         <p>Görkezmäge netije ýok.</p>

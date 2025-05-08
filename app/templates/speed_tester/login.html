@@ -297,18 +297,17 @@
                     {% csrf_token %}
                     <h1>Registrasiýa</h1>
                     <div class="input-box">
+                        <label>Ulanyjy ady</label>
                         {{ register_form.username }}
                         <i class="bx bxs-user"></i>
                     </div>
                     <div class="input-box">
+                        <label>Ulanyjynyn ady we familiyasy</label>
                         {{ register_form.first_name }}
                         <i class="bx bxs-lock-alt"></i>
                     </div>
                     <div class="input-box">
-                        {{ register_form.last_name }}
-                        <i class="bx bxs-lock-alt"></i>
-                    </div>
-                    <div class="input-box">
+                        <label>Ulanyjynyn paroly</label>
                         {{ register_form.password }}
                         <i class="bx bxs-lock-alt"></i>
                     </div>

@@ -16,6 +16,7 @@ class SearchQuery(models.Model):
 
     def __str__(self):
         return f"{self.full_query} (by {self.user.username})"
+
 class ExploitDbDork(models.Model):
     category = models.CharField(max_length=255)
     description = models.TextField()
@@ -25,15 +26,24 @@ class ExploitDbDork(models.Model):
     def __str__(self):
         return f"{self.category}: {self.dork_command}"
 
+    class Meta:
+        verbose_name="Exploit buýruk"
+        verbose_name_plural="Exploit buýruklar"
+
 class SpeedTestResult(models.Model):
     ip_address = models.CharField(max_length=100)
+    destination_ip = models.CharField(max_length=100)
     ping_ms = models.FloatField(null=True, blank=True)
     download_speed_kbps = models.FloatField(null=True, blank=True)
     upload_speed_kbps = models.FloatField(null=True, blank=True)
     timestamp = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"Результат для {self.ip_address} от {self.timestamp}"
+        return f"Netijeler {self.ip_address} от {self.timestamp}"
+    
+    class Meta:
+        verbose_name="Tizlik"
+        verbose_name_plural="Tizliklerin netijesi"
 
 
 class Commands(models.Model):
@@ -55,3 +65,7 @@ class TrafficLog(models.Model):
 
     def __str__(self):
         return f"{self.method} {self.path} - {self.duration:.2f}s"
+
+    class Meta:
+        verbose_name="Trafika"
+        verbose_name_plural="Trafikalar"

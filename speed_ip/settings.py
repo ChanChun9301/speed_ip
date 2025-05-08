@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     
     'app.middleware.TrafficMonitoringMiddleware',
+    # 'app.middleware.AuthRedirectMiddleware',
 ]
 
 ROOT_URLCONF = 'speed_ip.urls'
