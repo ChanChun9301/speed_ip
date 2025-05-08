@@ -1,0 +1,24 @@
+{% extends "layouts.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Traffic Logs</h1>
+    <table>
+        <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Duration (s)</th>
+            <th>Timestamp</th>
+        </tr>
+        {% for log in logs %}
+        <tr>
+            <td>{{ log.method }}</td>
+            <td>{{ log.path }}</td>
+            <td>{{ log.duration }}</td>
+            <td>{{ log.timestamp }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

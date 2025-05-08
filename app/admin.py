@@ -64,3 +64,4 @@ class ExploitDbDorkAdmin(admin.ModelAdmin):
     )
 
 admin.site.register(Commands)
+admin.site.register(TrafficLog)

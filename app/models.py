@@ -39,3 +39,11 @@ class Commands(models.Model):
     def __str__(self):
         return f"{self.command}: {self.description}"
 
+class TrafficLog(models.Model):
+    method = models.CharField(max_length=10)
+    path = models.CharField(max_length=255)
+    duration = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.method} {self.path} - {self.duration:.2f}s"

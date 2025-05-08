@@ -74,6 +74,15 @@ def logout_view(request):
 
     return render(request, 'speed_tester/login.html', {'login_form': login_form})  
 
+def traffic_logs(request):
+    logs = TrafficLog.objects.all().order_by('-timestamp')
+    return render(request, 'speed_tester/traffic.html', {'logs': logs})
+
+import subprocess
+import platform
+import requests
+import time
+
 def run_speed_test(ip_address):
     """Berlen IP salgysy üçin ping we tizlik ölçemegini ýerine ýetirýär."""
     results = {'ip_address': ip_address, 'ping_ms': None, 'download_speed_kbps': None, 'upload_speed_kbps': None}
@@ -114,45 +123,40 @@ def run_speed_test(ip_address):
         print(f"Ping wagtynda garaşylmadyk ýalňyşlyk ýüze çykdy {ip_address}: {e}")
         results['ping_ms'] = None
 
-    # Ýüklemek/ýüklemek tizligini ölçemek (serwerde internet birikmesini talap edýär)
+    # Download speed test using a known file
+    download_url = 'http://ipv4.download.thinkbroadband.com/1MB.zip'  # Sample file URL
     try:
-        process = subprocess.Popen(['speedtest-cli', '--simple'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_bytes, stderr_bytes = process.communicate(timeout=30)  # Taýmaudy köpeldýäris
-        stdout = stdout_bytes.decode('utf-8', errors='ignore').strip()
-        stderr = stderr_bytes.decode('utf-8', errors='ignore').strip()
+        start_time = time.time()
+        response = requests.get(download_url, stream=True)
+        total_length = 0
 
-        if stdout:
-            parts = stdout.split('\n')
-            ping_cli = None
-            download_cli = None
-            upload_cli = None
-            for part in parts:
-                if 'Ping:' in part:
-                    try:
-                        ping_cli = float(part.split(': ')[1].split(' ms')[0])
-                    except ValueError:
-                        pass
-                elif 'Download:' in part:
-                    try:
-                        download_cli = float(part.split(': ')[1].split(' Mbit/s')[0]) * 1000  # kbps-a öwrüýäris
-                    except ValueError:
-                        pass
-                elif 'Upload:' in part:
-                    try:
-                        upload_cli = float(part.split(': ')[1].split(' Mbit/s')[0]) * 1000  # kbps-a öwrüýäris
-                    except ValueError:
-                        pass
-            results['ping_ms'] = ping_cli
-            results['download_speed_kbps'] = download_cli
-            results['upload_speed_kbps'] = upload_cli
-        else:
-            print(f"speedtest-cli üçin ýalňyşlyk {ip_address}: {stderr}")
+        for data in response.iter_content(chunk_size=8192):
+            total_length += len(data)
 
+        end_time = time.time()
+        download_time = end_time - start_time
+        if download_time > 0:
+            results['download_speed_kbps'] = (total_length / 1024) / download_time  # kbps
     except Exception as e:
-        print(f"speedtest-cli işledilende ýalňyşlyk ýüze çykdy: {e}")
+        print(f"Download üçin ýalňyşlyk: {e}")
         results['download_speed_kbps'] = None
+
+    # Upload speed test (uploading a small file to a server)
+    try:
+        upload_url = 'https://httpbin.org/post'  # Sample upload URL
+        upload_data = b'x' * 1024 * 1024  # 1 MB of data
+        start_time = time.time()
+        response = requests.post(upload_url, data=upload_data)
+        end_time = time.time()
+        upload_time = end_time - start_time
+
+        if upload_time > 0:
+            results['upload_speed_kbps'] = (len(upload_data) / 1024) / upload_time  # kbps
+    except Exception as e:
+        print(f"Upload üçin ýalňyşlyk: {e}")
         results['upload_speed_kbps'] = None
 
+    print(results)
     return results
 
 def speed_test_view(request):

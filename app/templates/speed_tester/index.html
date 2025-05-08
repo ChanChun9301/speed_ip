@@ -65,8 +65,11 @@
     addButton.addEventListener('click', async () => {
         const inputGroup = document.createElement('div');
         inputGroup.className = 'input-group mb-2';
+        
+        
 
         const commandSelect = document.createElement('select');
+        commandSelect.style.height = '50px';
         commandSelect.className = 'form-control';
         const defaultCommandOption = document.createElement('option');
         defaultCommandOption.value = '';
@@ -76,12 +79,14 @@
         await populateSelect(commandSelect);
 
         const textInput = document.createElement('input');
+        textInput.style.height = '50px';
         textInput.type = 'text';
         textInput.className = 'form-control';
         textInput.placeholder = 'Giriş meýdançasy';
 
         const operatorSelect = document.createElement('select');
         operatorSelect.className = 'form-control';
+        operatorSelect.style.height = '50px';
         const defaultOperatorOption = document.createElement('option');
         defaultOperatorOption.value = '';
         defaultOperatorOption.text = 'Operator';
@@ -118,7 +123,7 @@
 
             let term = '';
             if (commandSelect.value && textInput.value) {
-                term = `${commandSelect.value}:${textInput.value}`;
+                term = `${commandSelect.value}: ${textInput.value}`;
             } else if (textInput.value) {
                 term = `${textInput.value}`;
             }
