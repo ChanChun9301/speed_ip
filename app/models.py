@@ -10,6 +10,10 @@ class SearchQuery(models.Model):
     search_date = models.DateTimeField(auto_now_add=True)
     results_count = models.IntegerField(null=True, blank=True)
 
+    class Meta:
+        verbose_name="Gozleg"
+        verbose_name_plural="Gozlegler"
+
     def __str__(self):
         return f"{self.full_query} (by {self.user.username})"
 class ExploitDbDork(models.Model):

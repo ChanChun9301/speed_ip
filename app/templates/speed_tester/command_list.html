@@ -1,0 +1,17 @@
+{% extends "layouts.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-5">
+    <h1>Komandalar</h1>
+    {% if results %}
+        <ul class="list-group">
+            {% for result in results %}
+                <li class="list-group-item">
+                    <strong>{{ result.command }} </strong> - {{ result.description }}
+                </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'home' %}" class="btn btn-success mt-3">Baş sahypa</a>
+    {% endif %}
+</div>
+{% endblock %}

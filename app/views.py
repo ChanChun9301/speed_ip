@@ -8,7 +8,6 @@ from django.http import JsonResponse
 import subprocess
 import platform
 from django.contrib.auth import login, authenticate
-# import speedtest as st_lib
 from pyspeedtest import SpeedTest
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login as django_login
@@ -19,6 +18,16 @@ from django.template import loader, Context, RequestContext
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+import socket
+import threading
+import subprocess
+import platform
+import requests
+import time
+import json
+import re
+
+
 
 def index(request):
     return render(request,'speed_tester/index.html',{})
@@ -74,89 +83,139 @@ def logout_view(request):
 
     return render(request, 'speed_tester/login.html', {'login_form': login_form})  
 
+def capture_netstat():
+    try:
+        result = subprocess.run(['netstat', '-an'], capture_output=True, text=True, timeout=10)
+        
+        if result.returncode == 0:
+            lines = result.stdout.splitlines()
+            for line in lines:
+                if line.startswith(('Proto', 'TCP', 'UDP')):
+                    log_entry = line.strip()
+                    print(f"Logging entry: {log_entry}")  # Debug statement
+                    a = TrafficLog.objects.create(
+                        method='Netstat Capture',
+                        path=log_entry,
+                        duration=0,
+                        timestamp=timezone.now()
+                    )
+                    print('>>>>>'+str(a)+'\n')
+        else:
+            print(f"Error running netstat: {result.stderr}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+def run_netstat_capture():
+    while True:
+        capture_netstat()
+        time.sleep(5)  # Capture every 60 seconds
+
+def start_netstat_capture_thread():
+    capture_thread = threading.Thread(target=run_netstat_capture)
+    capture_thread.daemon = True
+    capture_thread.start()
+
 def traffic_logs(request):
     logs = TrafficLog.objects.all().order_by('-timestamp')
     return render(request, 'speed_tester/traffic.html', {'logs': logs})
 
-import subprocess
-import platform
-import requests
-import time
-
 def run_speed_test(ip_address):
-    """Berlen IP salgysy üçin ping we tizlik ölçemegini ýerine ýetirýär."""
-    results = {'ip_address': ip_address, 'ping_ms': None, 'download_speed_kbps': None, 'upload_speed_kbps': None}
+    """Executes ping and speed tests for the given IP address."""
+    results = {
+        'ip_address': ip_address,
+        'ping_ms': None,
+        'download_speed_kbps': None,
+        'upload_speed_kbps': None
+    }
 
+    # Ping
     param = '-n' if platform.system().lower() == 'windows' else '-c'
     command = ['ping', param, '4', ip_address]
 
-    # Ping
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_bytes, stderr_bytes = process.communicate(timeout=10)
-        stdout = ''
-        stderr = ''
+
+        # Try decoding output with multiple encodings
         for encoding in ['utf-8', 'cp1251', 'latin-1', 'windows-1252']:
             try:
                 stdout = stdout_bytes.decode(encoding)
-                stderr = stderr_bytes.decode(encoding)
                 break
             except UnicodeDecodeError:
-                pass
-
-        if process.returncode == 0:
-            lines = stdout.split('\n')
-            for line in lines:
-                if 'avg' in line or 'Average' in line or 'Среднее' in line:
-                    parts = line.split('=')[1].split('/') if '=' in line else line.split(': ')[1].split(', ')[0].split('ms')[0].replace('мс', '').strip()
-                    try:
-                        results['ping_ms'] = float(parts[0]) if isinstance(parts, list) else float(parts)
-                    except ValueError:
-                        pass
+                continue
         else:
-            print(f"Pingde ýalňyşlyk {ip_address} (kod {process.returncode}): {stderr}")
+            stdout = stdout_bytes.decode(errors='ignore')
+
+        print('Code:'+str(process.returncode))
+        if process.returncode == 0:
+            for line in stdout.split('\n'):
+                line_lower = line.lower()
+                if any(keyword in line_lower for keyword in ['минимальное =', 'максимальное =', 'среднее =']):
+                    parts = line.split('=')
+                    print(parts)
+                    if len(parts) > 1:
+                        time_part = parts[1].strip().split()[0].replace('мс', '').strip()
+                        try:
+                            ping_ms = float(time_part)
+                            results['ping_ms'] = ping_ms
+                            print('milli sekund:', ping_ms)
+                            break  # Assuming we found the relevant ping time
+                        except ValueError:
+                            print(f"Could not convert ping time to float: {time_part}")
+                elif any(keyword in line_lower for keyword in ['мин.', 'макс.']): # For some Russian outputs
+                    numbers = [float(s.replace(',', '.').replace('ms', '').replace('мсек', '').strip()) for s in line.split() if s.replace(',', '').replace('.', '').isdigit()]
+                    if numbers and len(numbers) >= 2:
+                        results['ping_ms'] = numbers[1] # Assuming average is the second number after min/max
+                        print('milli sekund (мин/макс):', numbers[1])
+                        break
+                elif 'time' in line_lower: # For some English outputs
+                    parts = line.split('time=')[1].split()[0].replace('ms', '').strip()
+                    try:
+                        ping_ms = float(parts)
+                        results['ping_ms'] = ping_ms
+                        print('milli sekund (time=):', ping_ms)
+                        break
+                    except ValueError:
+                        print(f"Could not convert ping time (time=) to float: {parts}")
+
+        else:
+            print(f"Ping error for {ip_address} (code {process.returncode}): {stderr_bytes.decode(errors='ignore')}")
             results['ping_ms'] = None
+
     except subprocess.TimeoutExpired:
-        results['ping_ms'] = -1  # Wagt gutarandygyny görkezýäris
-        print(f"Ping {ip_address} wagty gutardy.")
+        print(f"Ping timeout for {ip_address}")
+        results['ping_ms'] = -1
+        # print(results['ping_ms'])
     except Exception as e:
-        print(f"Ping wagtynda garaşylmadyk ýalňyşlyk ýüze çykdy {ip_address}: {e}")
-        results['ping_ms'] = None
+        print(f"Unexpected ping error: {e}")
 
-    # Download speed test using a known file
-    download_url = 'http://ipv4.download.thinkbroadband.com/1MB.zip'  # Sample file URL
+    # Download Speed Test
+    download_url = f'http://{ip_address}'
     try:
         start_time = time.time()
-        response = requests.get(download_url, stream=True)
-        total_length = 0
+        response = requests.get(download_url, stream=True, timeout=10)
+        total_length = sum(len(chunk) for chunk in response.iter_content(chunk_size=8192))
+        download_time = time.time() - start_time
 
-        for data in response.iter_content(chunk_size=8192):
-            total_length += len(data)
-
-        end_time = time.time()
-        download_time = end_time - start_time
         if download_time > 0:
-            results['download_speed_kbps'] = (total_length / 1024) / download_time  # kbps
+            results['download_speed_kbps'] = round((total_length / 1024) / download_time, 2)
     except Exception as e:
-        print(f"Download üçin ýalňyşlyk: {e}")
-        results['download_speed_kbps'] = None
+        print(f"Download error: {e}")
 
-    # Upload speed test (uploading a small file to a server)
+    # Upload Speed Test
+    upload_url = f'http://{ip_address}'
     try:
-        upload_url = 'https://httpbin.org/post'  # Sample upload URL
-        upload_data = b'x' * 1024 * 1024  # 1 MB of data
+        upload_data = b'x' * 1024 * 1024  # 1MB
         start_time = time.time()
-        response = requests.post(upload_url, data=upload_data)
-        end_time = time.time()
-        upload_time = end_time - start_time
+        response = requests.post(upload_url, data=upload_data, timeout=10)
+        upload_time = time.time() - start_time
 
         if upload_time > 0:
-            results['upload_speed_kbps'] = (len(upload_data) / 1024) / upload_time  # kbps
+            results['upload_speed_kbps'] = round((len(upload_data) / 1024) / upload_time, 2)
     except Exception as e:
-        print(f"Upload üçin ýalňyşlyk: {e}")
-        results['upload_speed_kbps'] = None
+        print(f"Upload error: {e}")
 
-    print(results)
+    # print(results)
     return results
 
 def speed_test_view(request):
@@ -165,7 +224,9 @@ def speed_test_view(request):
         if form.is_valid():
             ip_address = form.cleaned_data['ip_addresses']
             test_result = run_speed_test(ip_address)
-            print(test_result)
+            print(test_result['ping_ms'])
+
+             # Ensure all values are not None
             SpeedTestResult.objects.create(
                 ip_address=test_result['ip_address'],
                 ping_ms=test_result['ping_ms'],
@@ -173,15 +234,20 @@ def speed_test_view(request):
                 upload_speed_kbps=test_result['upload_speed_kbps']
             )
             return render(request, 'speed_tester/results.html', {'results': [test_result]})
+            
     else:
         form = IPAddressForm()
+    
     return render(request, 'speed_tester/speed_test_form.html', {'form': form})
 
 
 def history_view(request):
-    """Отображает историю последних 10 результатов тестов."""
     history = SpeedTestResult.objects.all().order_by('-timestamp')[:10]
     return render(request, 'speed_tester/history.html', {'history': history})
+
+def com_list(request):
+    results = Commands.objects.all()
+    return render(request, 'speed_tester/command_list.html', {'results': results})
 
 @login_required
 def google_dorking_view(request):
@@ -222,9 +288,37 @@ def google_dorking_view(request):
     return render(request, 'google_dorking.html', {'form': form})
 
 @login_required
+def save_search(request):
+    if request.method == 'POST':
+        full_query = request.POST.get('full_query')
+        text_inputs_json = request.POST.get('text_inputs')
+        dork_commands_json = request.POST.get('dork_commands')
+
+        try:
+            text_inputs = json.loads(text_inputs_json)
+            dork_commands = json.loads(dork_commands_json)
+
+            for text_input, dork_command in zip(text_inputs, dork_commands):
+                search_query = SearchQuery(
+                    user=request.user,
+                    text_input=text_input.strip(),
+                    dork_command=dork_command.strip(),
+                    full_query=full_query.strip()
+                )
+                search_query.save()
+
+            return JsonResponse({'status': 'success'}) # Optionally return a success response
+        except json.JSONDecodeError as e:
+            return JsonResponse({'status': 'error', 'message': f'JSON dekodirlenende ýalňyşlyk: {e}'}, status=400)
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': f'Gözleg saklanylanda ýalňyşlyk: {e}'}, status=500)
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Diňe POST isleglerine rugsat berilýär.'}, status=405)
+
+@login_required
 def search_history_view(request):
     history = SearchQuery.objects.filter(user=request.user).order_by('-search_date')
-    return render(request, 'search_history.html', {'history': history})
+    return render(request, 'speed_tester/search_history.html', {'history': history})
 
 def update_exploit_db_dorks(request):
     url = "https://www.exploit-db.com/google-hacking-database"
@@ -262,7 +356,6 @@ def exploit_db_dorks_view(request):
 
 
 def speed_test_results_list(request):
-    """Displays a list of speed test results."""
     results = SpeedTestResult.objects.all().order_by('-timestamp')
     return render(request, 'speed_tester/results_list.html', {'results': results})
 
