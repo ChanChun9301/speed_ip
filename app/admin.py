@@ -25,7 +25,7 @@ class SpeedTestResultAdmin(admin.ModelAdmin):
 @admin.register(SearchQuery)
 class SearchQueryAdmin(admin.ModelAdmin):
     list_display = ('full_query', 'search_date', 'results_count')
-    list_filter = ('search_date',)
+    list_filter = ('search_date','dork_command',)
     search_fields = ('text_input', 'dork_command', 'full_query')
     date_hierarchy = 'search_date'
     readonly_fields = ('search_date', 'full_query')
@@ -43,23 +43,6 @@ class SearchQueryAdmin(admin.ModelAdmin):
         }),
         ('Дополнительная информация', {
             'fields': ('results_count',)
-        }),
-    )
-
-@admin.register(ExploitDbDork)
-class ExploitDbDorkAdmin(admin.ModelAdmin):
-    list_display = ('category', 'dork_command', 'description', 'link')
-    list_filter = ('category',)
-    search_fields = ('category', 'dork_command', 'description')
-    readonly_fields = ('link',)
-    ordering = ('category', 'dork_command')
-
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('category', 'dork_command', 'description')
-        }),
-        ('Дополнительная информация', {
-            'fields': ('link',)
         }),
     )
 

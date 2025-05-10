@@ -27,8 +27,7 @@ import speedtest
 
 def first_visit(request):
     if not request.user.is_authenticated:
-        # Решите, какую страницу показывать первой: вход или регистрацию
-        return redirect('login')  # Или redirect('register')
+        return redirect('login')  
     else:
         return redirect('home')
 
@@ -53,14 +52,13 @@ def login_view(request):
             user = form.get_user()
             django_login(request, user)
             messages.success(request, f'Hoş geldiňiz, {user.username}!')
-            return redirect('home')  # Redirect to your homepage
+            return redirect('home')  
         else:
-            # Re-render the auth page with login errors
             login_form = form
             register_form = UserCreationForm()
             return render(request, 'speed_tester/login.html', {'login_form': login_form, 'register_form': register_form})
     else:
-        return redirect('auth') # Redirect to the page with both forms
+        return redirect('auth') 
 
 def register_view(request):
     if request.method == 'POST':
@@ -69,20 +67,18 @@ def register_view(request):
             user = form.save()
             username = form.cleaned_data.get('username')
             messages.success(request, f'Hasap döredildi: {username}! Indi ulanyp bilersiňiz.')
-            django_login(request, user) # Optionally log the user in immediately
-            return redirect('home') # Redirect to your homepage
-        else:
-            # Re-render the auth page with registration errors
+            django_login(request, user) 
+            return redirect('home')
             login_form = AuthenticationForm()
             register_form = form
             return render(request, 'speed_tester/login.html', {'login_form': login_form, 'register_form': register_form})
     else:
-        return redirect('auth') # Redirect to the page with both forms
+        return redirect('auth') 
 
 def logout_view(request):
     django_logout(request)
     messages.info(request, "Ulgamdan çykdyňyz.")
-    return redirect('auth') # Redirect back to the login/register page
+    return redirect('auth') 
 
     return render(request, 'speed_tester/login.html', {'login_form': login_form})  
 
@@ -95,7 +91,7 @@ def capture_netstat():
             for line in lines:
                 if line.startswith(('Proto', 'TCP', 'UDP')):
                     log_entry = line.strip()
-                    print(f"Logging entry: {log_entry}")  # Debug statement
+                    print(f"Logging entry: {log_entry}") 
                     a = TrafficLog.objects.create(
                         method='Netstat Capture',
                         path=log_entry,
@@ -111,7 +107,7 @@ def capture_netstat():
 def run_netstat_capture():
     while True:
         capture_netstat()
-        time.sleep(5)  # Capture every 60 seconds
+        time.sleep(5) 
 
 def start_netstat_capture_thread():
     capture_thread = threading.Thread(target=run_netstat_capture)
@@ -131,8 +127,8 @@ def get_ip_address(domain):
 
 def run_speed_test(ip_address=None):
     results = {
-        'input': ip_address,  # Сохраняем введенное значение (может быть доменом)
-        'destination_ip': None, # Здесь будем хранить IP-адрес домена (если был введен домен)
+        'input': ip_address,  
+        'destination_ip': None, 
         'ping_ms': None,
         'download_speed_kbps': None,
         'upload_speed_kbps': None
@@ -152,7 +148,6 @@ def run_speed_test(ip_address=None):
         results['ping_ms'] = res.get('ping') * 1000 if res.get('ping') is not None else None
         results['download_speed_kbps'] = res.get('download') / 1000 if res.get('download') is not None else None
         results['upload_speed_kbps'] = res.get('upload') / 1000 if res.get('upload') is not None else None
-        # We are NOT overwriting 'ip_address' with the client's IP here
         results['ip_address'] = res.get('client', {}).get('ip', ip_address)
 
     except speedtest.SpeedtestException as e:
@@ -179,8 +174,8 @@ def speed_test_view(request):
                 if 'input' in test_result and 'ping_ms' in test_result and \
                    'download_speed_kbps' in test_result and 'upload_speed_kbps' in test_result and 'error' not in test_result:
                     SpeedTestResult.objects.create(
-                        ip_address=ip_addresses_text,  # Save the entered value
-                        destination_ip=test_result.get('destination_ip'), # Save the resolved IP
+                        ip_address=ip_addresses_text, 
+                        destination_ip=test_result.get('destination_ip'), 
                         ping_ms=test_result['ping_ms'],
                         download_speed_kbps=test_result['download_speed_kbps'],
                         upload_speed_kbps=test_result['upload_speed_kbps']
@@ -196,7 +191,7 @@ def speed_test_view(request):
 
 
 def history_view(request):
-    history = SpeedTestResult.objects.all().order_by('-timestamp')[:10]
+    history = SpeedTestResult.objects.all().order_by('-timestamp')
     return render(request, 'speed_tester/history.html', {'history': history})
 
 def com_list(request):
@@ -228,7 +223,7 @@ def save_search(request):
                 print(search_query)
                 search_query.save()
 
-            return JsonResponse({'status': 'success'}) # Optionally return a success response
+            return JsonResponse({'status': 'success'}) 
         except json.JSONDecodeError as e:
             return JsonResponse({'status': 'error', 'message': f'JSON dekodirlenende ýalňyşlyk: {e}'}, status=400)
         except Exception as e:
@@ -251,6 +246,5 @@ def speed_test_results_detail(request, result_id):
     try:
         result = SpeedTestResult.objects.get(pk=result_id)
     except SpeedTestResult.DoesNotExist:
-        # Handle the case where the result doesn't exist (e.g., 404 page)
         return render(request, 'speed_tester/result_not_found.html', {'result_id': result_id}, status=404)
     return render(request, 'speed_tester/results_detail.html', {'result': result})
