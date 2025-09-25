@@ -2,206 +2,243 @@
 {% load static %}
 {% block content %}
 <div class="container mt-5">
-    <div class="card  rounded-lg">
-        <div class="card-header bg-success ">
-            <h1 class="mb-0 text-center text-white"><i class="fas fa-search mr-2"></i> Google-da gözlegleri geçirmegiň aňsat usuly</h1>
+    <div class="card rounded-lg">
+        <div class="card-header bg-success">
+            <h1 class="mb-0 text-center text-white">
+                <i class="fas fa-search mr-2"></i> Google-da gözlegleri geçirmegiň aňsat usuly
+            </h1>
         </div>
         <div class="card-body p-4">
-            <p class="lead text-center mb-3">Gözleg sözlerini we dork komandalaryny goşup, ýöriteleşdirilen Google gözleg URL-lerini dörediň.</p>
-            <a href="{% url 'com_list' %}" class="btn btn-outline-success mr-2 rounded-pill" style="margin-bottom: 10px;"><i class="fas fa-list mr-1"></i> Komandalar barada</a>
-            <div id="inputContainer" class="mb-3">
-                </div>
+            <p class="lead text-center mb-3">
+                Gözleg sözlerini we dork komandalaryny goşup, ýöriteleşdirilen Google gözleg URL-lerini dörediň.
+            </p>
+            <a href="{% url 'com_list' %}" class="btn btn-outline-success mr-2 rounded-pill mb-3">
+                <i class="fas fa-list mr-1"></i> Komandalar barada
+            </a>
+
+            <div id="inputContainer" class="mb-3"></div>
+
             <div class="d-flex justify-content-center align-items-center mb-3">
-                <button id="addButton" class="btn btn-outline-success mr-2 rounded-pill"><i class="fas fa-plus mr-1"></i> Goşmak</button>
-                <button id="collectButton" class="btn btn-primary rounded-pill"><i class="fas fa-search mr-1"></i> Gözleg URL-ny döretmek</button>
+                <button id="addButton" class="btn btn-outline-success mr-2 rounded-pill">
+                    <i class="fas fa-plus mr-1"></i> Goşmak
+                </button>
+                <button id="collectButton" class="btn btn-primary rounded-pill">
+                    <i class="fas fa-search mr-1"></i> Gözleg URL-ny döretmek
+                </button>
             </div>
-            <p id="output" class="mt-3 alert alert-info text-center" style="display: none;"></p>
-            <form id="googleSearchForm" action="https://www.google.com/search" method="get" target="_blank">
-                <input type="hidden" name="q" id="searchQuery">
-                <button type="submit" style="display: none;">Gözlegi başla</button>
-            </form>
+
+            <div id="outputContainer" class="mt-3" style="display:none;">
+                <input type="text" id="output" class="form-control mb-2" readonly style="background-color:#e8f0fe; font-weight:bold;">
+                <button id="copyButton" class="btn btn-outline-success rounded-pill">Копировать ссылку</button>
+                <a id="openButton" class="btn btn-primary rounded-pill ml-2" target="_blank">Открыть Google</a>
+            </div>
+
         </div>
     </div>
 </div>
 
 <script>
-    const inputContainer = document.getElementById('inputContainer');
-    const addButton = document.getElementById('addButton');
-    const collectButton = document.getElementById('collectButton');
-    const outputParagraph = document.getElementById('output');
-    const googleSearchForm = document.getElementById('googleSearchForm');
-    const searchQueryInput = document.getElementById('searchQuery');
+const inputContainer = document.getElementById('inputContainer');
+const addButton = document.getElementById('addButton');
+const collectButton = document.getElementById('collectButton');
+const outputContainer = document.getElementById('outputContainer');
+const outputInput = document.getElementById('output');
+const copyButton = document.getElementById('copyButton');
+const openButton = document.getElementById('openButton');
 
-    async function fetchCommands() {
-        try {
-            const response = await fetch('/api/commands/');
-            const data = await response.json();
-            return data.commands;
-        } catch (error) {
-            console.error("Komandalary almakda ýalňyşlyk:", error);
-            return [];
+async function fetchCommands() {
+    try {
+        const response = await fetch('/api/commands/');
+        const data = await response.json();
+        return data.commands;
+    } catch (error) {
+        console.error("Komandalary almakda ýalňyşlyk:", error);
+        return [];
+    }
+}
+
+
+async function populateSelect(selectElement) {
+    const commands = await fetchCommands();
+
+    commands.forEach(command => {
+        const option = document.createElement('option');
+        option.value = command.dork_command;
+        option.text = command.dork_command;
+
+        // Основное описание команды
+        let titleText = command.description || '';
+
+        // Примеры ExploitDB
+        if (command.examples && command.examples.length > 0) {
+            const examplesText = command.examples
+                .map(ex => `${ex.description} -> ${ex.url}`)
+                .join("\n");
+            titleText += "\nПримеры ExploitDB:\n" + examplesText;
+        }
+
+        option.title = titleText;
+        selectElement.appendChild(option);
+    });
+}
+
+
+function populateOperatorSelect(selectElement) {
+    const operators = [' ','&','|','+','-','OR'];
+    operators.forEach(operator => {
+        const option = document.createElement('option');
+        option.value = operator;
+        option.text = operator;
+        selectElement.appendChild(option);
+    });
+}
+
+addButton.addEventListener('click', async () => {
+    const inputGroupWrapper = document.createElement('div');
+    inputGroupWrapper.className = 'd-flex align-items-center mb-2';
+
+    const commandSelect = document.createElement('select');
+    commandSelect.className = 'form-control mr-2';
+    commandSelect.style.height = '50px';
+    const defaultCommandOption = document.createElement('option');
+    defaultCommandOption.value = '';
+    defaultCommandOption.text = 'Komandany saýlaň';
+    defaultCommandOption.disabled = true;
+    defaultCommandOption.selected = true;
+    commandSelect.appendChild(defaultCommandOption);
+    await populateSelect(commandSelect);
+
+    const textInput = document.createElement('input');
+    textInput.type = 'text';
+    textInput.className = 'form-control mr-2';
+    textInput.style.height = '50px';
+    textInput.placeholder = 'Giriş meýdançasy';
+
+    const operatorSelect = document.createElement('select');
+    operatorSelect.className = 'form-control mr-2';
+    operatorSelect.style.height = '50px';
+    const defaultOperatorOption = document.createElement('option');
+    defaultOperatorOption.value = '';
+    defaultOperatorOption.text = 'Operator';
+    defaultOperatorOption.disabled = true;
+    defaultOperatorOption.selected = true;
+    operatorSelect.appendChild(defaultOperatorOption);
+    populateOperatorSelect(operatorSelect);
+
+    const textInput2 = document.createElement('input');
+    textInput2.type = 'text';
+    textInput2.className = 'form-control mr-2';
+    textInput2.style.height = '50px';
+    textInput2.placeholder = 'Açar söz';
+
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'btn btn-outline-danger rounded-pill';
+    removeButton.innerHTML = '<i class="fas fa-trash"></i>';
+    removeButton.addEventListener('click', () => inputGroupWrapper.remove());
+
+    inputGroupWrapper.appendChild(commandSelect);
+    inputGroupWrapper.appendChild(textInput);
+    inputGroupWrapper.appendChild(operatorSelect);
+    inputGroupWrapper.appendChild(textInput2);
+    inputGroupWrapper.appendChild(removeButton);
+
+    inputContainer.appendChild(inputGroupWrapper);
+
+    // Авто-фокус на новое поле
+    textInput.focus();
+});
+
+// CSRF helper
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = cookie.substring(name.length + 1);
+                break;
+            }
         }
     }
+    return cookieValue;
+}
 
-    async function populateSelect(selectElement) {
-        const commands = await fetchCommands();
-        commands.forEach(command => {
-            const option = document.createElement('option');
-            option.value = command.dork_command;
-            option.text = `${command.dork_command}`;
-            option.title = command.description;
-            selectElement.appendChild(option);
-        });
-    }
+collectButton.addEventListener('click', async () => {
+    const inputGroups = inputContainer.querySelectorAll('.d-flex.align-items-center');
+    let combinedQuery = '';
+    let textInputs = [];
+    let dorkCommands = [];
 
-    async function populateOperatorSelect(selectElement) {
-        const operators = [' ','&','|','+', '-', 'OR',];
-        operators.forEach(operator => {
-            const option = document.createElement('option');
-            option.value = operator;
-            option.text = operator;
-            selectElement.appendChild(option);
-        });
-    }
+    inputGroups.forEach(group => {
+        const commandSelect = group.querySelector('select:nth-child(1)');
+        const textInput = group.querySelector('input:nth-child(2)');
+        const operatorSelect = group.querySelector('select:nth-child(3)');
+        const textInput2 = group.querySelector('input:nth-child(4)');
 
-    addButton.addEventListener('click', async () => {
-        const inputGroup = document.createElement('div');
-        inputGroup.className = 'input-group mb-2';
+        let term = '';
+        let currentText = textInput.value.trim();
+        let currentCommand = commandSelect.value;
+        let currentText2 = textInput2.value.trim();
 
-        const commandSelect = document.createElement('select');
-        commandSelect.style.height = '50px';
-        commandSelect.className = 'form-control';
-        const defaultCommandOption = document.createElement('option');
-        defaultCommandOption.value = '';
-        defaultCommandOption.text = 'Komandany saýlaň';
-        defaultCommandOption.disabled = true;
-        defaultCommandOption.selected = true;
-        await populateSelect(commandSelect);
+        if (currentCommand && currentText) {
+            term = `${currentCommand}:${currentText}`;
+            dorkCommands.push(currentCommand);
+            textInputs.push(currentText);
+        } else if (currentText) {
+            term = `${currentText}`;
+            dorkCommands.push('');
+            textInputs.push(currentText);
+        }
 
-        const textInput = document.createElement('input');
-        textInput.style.height = '50px';
-        textInput.type = 'text';
-        textInput.className = 'form-control';
-        textInput.placeholder = 'Giriş meýdançasy';
-
-        const operatorSelect = document.createElement('select');
-        operatorSelect.className = 'form-control';
-        operatorSelect.style.height = '50px';
-        const defaultOperatorOption = document.createElement('option');
-        defaultOperatorOption.value = '';
-        defaultOperatorOption.text = 'Operator';
-        defaultOperatorOption.disabled = true;
-        defaultOperatorOption.selected = true;
-        await populateOperatorSelect(operatorSelect);
-
-        const textInput2 = document.createElement('input');
-        textInput2.style.height = '50px';
-        textInput2.type = 'text';
-        textInput2.className = 'form-control';
-        textInput2.placeholder = 'Açar söz';
-
-        const removeButton = document.createElement('button');
-        removeButton.className = 'btn btn-outline-danger rounded-pill';
-        removeButton.innerHTML = '<i class="fas fa-trash"></i>';
-        removeButton.addEventListener('click', () => {
-            inputGroup.remove();
-        });
-
-        inputGroup.appendChild(commandSelect);
-        inputGroup.appendChild(textInput);
-        inputGroup.appendChild(operatorSelect);
-        inputGroup.appendChild(textInput2);
-        inputGroup.appendChild(removeButton);
-
-        const inputGroupWrapper = document.createElement('div'); // Create a wrapper for better layout
-        inputGroupWrapper.className = 'd-flex align-items-center';
-        inputGroupWrapper.appendChild(inputGroup);
-        inputContainer.appendChild(inputGroupWrapper);
-    });
-
-    collectButton.addEventListener('click', async () => {
-        const inputGroups = inputContainer.querySelectorAll('.input-group');
-        let combinedQuery = '';
-        let textInputs = [];
-        let dorkCommands = [];
-
-        inputGroups.forEach(group => {
-            const commandSelect = group.querySelector('select:nth-child(1)');
-            const textInput = group.querySelector('input[type="text"]:nth-child(2)');
-            const operatorSelect = group.querySelector('select:nth-child(3)');
-            const textInput2 = group.querySelector('input[type="text"]:nth-child(4)');
-
-            let term = '';
-            let currentText = textInput.value.trim();
-            let currentCommand = commandSelect.value;
-            let currentText2 = textInput2.value.trim();
-
-            if (currentCommand && currentText) {
-                term = `${currentCommand}:${currentText}`;
-                dorkCommands.push(currentCommand);
-                textInputs.push(currentText);
-            } else if (currentText) {
-                term = `${currentText}`;
-                textInputs.push(currentText);
-                dorkCommands.push('');
-            }
-
-            if (term) {
-                combinedQuery += `${term} ${operatorSelect.value}${currentText2}`;
-            }
-        });
-
-        const trimmedQuery = combinedQuery.trim();
-        const googleSearchUrl = 'https://www.google.com/search?q=' + encodeURIComponent(trimmedQuery);
-
-        outputParagraph.textContent = 'Döredilen Google Gözleg URL-y: ' + googleSearchUrl;
-        outputParagraph.style.display = 'block';
-        searchQueryInput.value = trimmedQuery;
-
-        // Programmatically submit the form to open Google Search in a new tab
-        googleSearchForm.submit();
-
-        // Send data to Django backend to save (Optional)
-        try {
-            const formData = new FormData();
-            formData.append('full_query', trimmedQuery);
-            formData.append('text_inputs', JSON.stringify(textInputs));
-            formData.append('dork_commands', JSON.stringify(dorkCommands));
-            formData.append('dork_commands', JSON.stringify(dorkCommands));
-
-            console.log(formData);
-
-            const response = await fetch('/save_search/', { // Replace '/save_search/' with your Django URL
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'), // Make sure you have the CSRF token in your cookies
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                console.error('Gözleg saklanylanda ýalňyşlyk:', response.status);
-            }
-        } catch (error) {
-            console.error('Gözleg saklanylanda ýalňyşlyk:', error);
+        if (term) {
+            combinedQuery += `${term} ${operatorSelect.value}${currentText2} `;
         }
     });
 
-    // Helper function to get CSRF token from cookies
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                let cookie = cookies[i].trim();
-                // Does this cookie string begin with the name we want?
-                if (cookie.startsWith(name + '=')) {
-                    cookieValue = cookie.substring(name.length + 1);
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    const trimmedQuery = combinedQuery.trim();
+    const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(trimmedQuery);
+
+    // Сохраняем на бэкенде
+    try {
+        const formData = new FormData();
+        formData.append('full_query', trimmedQuery);
+        formData.append('text_inputs', JSON.stringify(textInputs));
+        formData.append('dork_commands', JSON.stringify(dorkCommands));
+
+        const response = await fetch('/save_search/', {
+            method: 'POST',
+            headers: {'X-CSRFToken': getCookie('csrftoken')},
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Сервер вернул ошибку');
+
+        // Показать ссылку пользователю
+        outputInput.value = googleUrl;
+        openButton.href = googleUrl;
+        outputContainer.style.display = 'block';
+    } catch (error) {
+        outputInput.value = 'Ошибка при сохранении: ' + error;
+        outputContainer.style.display = 'block';
     }
+});
+
+// Копировать ссылку
+copyButton.addEventListener('click', () => {
+    outputInput.select();
+    document.execCommand('copy');
+    alert('Ссылка скопирована в буфер обмена!');
+});
+</script>
+<script>
+    $(document).ready(function(){
+        $('[title]').tooltip({
+            placement: 'right',
+            trigger: 'hover'
+        });
+    });
+    
 </script>
 {% endblock %}

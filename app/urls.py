@@ -11,6 +11,7 @@ urlpatterns = [
     path('traffic/', traffic_logs, name='traffic_logs'),
     path('list/', com_list, name='com_list'),
     path('save_search/', save_search, name='save_search'),
+    path('exploits/', exploit_list_view, name='exploit_list'),
 
     path('auth/', auth_view, name='auth'),
     path('login/', login_view, name='login'),
