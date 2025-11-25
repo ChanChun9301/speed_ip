@@ -1,17 +1,114 @@
 {% extends "layouts.html" %}
 {% load static %}
+
 {% block content %}
-<div class="container mt-5">
-    <h1>Komandalar</h1>
-    {% if results %}
-        <ul class="list-group">
-            {% for result in results %}
-                <li class="list-group-item">
-                    <strong>{{ result.command }} </strong> - {{ result.description }}
-                </li>
-            {% endfor %}
-        </ul>
-        <a href="{% url 'home' %}" class="btn btn-success mt-3">Baş sahypa</a>
-    {% endif %}
+<div class="min-h-screen py-16 px-4">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Заголовок — строго и мощно -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl md:text-7xl font-black text-gradient mb-6 tracking-tight">
+                Google Dork Komandalary
+            </h1>
+            <p class="text-xl text-gray-400 max-w-3xl mx-auto leading-relaxed">
+                Ýöriteleşdirilen Google gözleg operatorlary — häzirki wagtda iň güýçli we täsirli 100+ dork
+            </p>
+        </div>
+
+        <!-- Список команд — премиум карточки -->
+        {% if results %}
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                {% for result in results %}
+                <div class="group glass rounded-2xl p-7 border border-white/10 hover:border-[#92DEB5]/40 transition-all duration-500 hover:scale-[1.03] hover:shadow-2xl neon-glow">
+                    
+                    <!-- Команда + кнопка копирования -->
+                    <div class="flex items-start justify-between mb-5">
+                        <code class="text-2xl md:text-3xl font-bold font-mono text-gradient">
+                            {{ result.command }}
+                        </code>
+                        <button 
+                            onclick="navigator.clipboard.writeText('{{ result.command|escapejs }}')"
+                            class="opacity-0 group-hover:opacity-100 transition-all duration-400 btn btn-circle btn-sm glass border border-white/20 hover:border-[#92DEB5] hover:bg-[#92DEB5]/10">
+                            <i class="fas fa-copy text-[#92DEB5]"></i>
+                        </button>
+                    </div>
+
+                    <!-- Описание -->
+                    <p class="text-gray-300 text-base leading-relaxed mb-4">
+                        {{ result.description }}
+                    </p>
+
+                    <!-- ExploitDB примеры -->
+                    {% if result.examples.exists %}
+                    <details class="mt-5 cursor-pointer group-details">
+                        <summary class="flex items-center gap-2 text-sm font-medium text-[#92DEB5] hover:text-white transition-colors">
+                            <i class="fas fa-chevron-down text-xs transition-transform group-details-open:rotate-180"></i>
+                            ExploitDB mysallary ({{ result.examples.count }})
+                        </summary>
+                        <div class="mt-4 space-y-3 pl-6 border-l-2 border-[#92DEB5]/30">
+                            {% for ex in result.examples.all %}
+                            <div class="text-sm">
+                                <a href="{{ ex.url }}" target="_blank" class="link link-hover text-gray-400 hover:text-[#92DEB5] transition-colors flex items-center gap-2">
+                                    <i class="fas fa-external-link-alt text-xs"></i>
+                                    {{ ex.description|truncatechars:70 }}
+                                </a>
+                            </div>
+                            {% empty %}
+                            <span class="text-gray-600 text-xs italic">Mysallar ýok</span>
+                            {% endfor %}
+                        </div>
+                    </details>
+                    {% endif %}
+
+                </div>
+                {% empty %}
+                <div class="col-span-full text-center py-32">
+                    <div class="glass max-w-md mx-auto rounded-3xl p-12 border border-white/10">
+                        <i class="fas fa-code text-9xl text-gray-700 mb-6 opacity-40"></i>
+                        <h3 class="text-3xl font-bold text-gray-500">Komandalar tapylmady</h3>
+                        <p class="text-gray-600 mt-3">Baza boş ýa-da ýalňyşlyk ýüze çykdy</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+        {% else %}
+            <!-- Загрузка или пусто -->
+            <div class="text-center py-32">
+                <div class="glass max-w-md mx-auto rounded-3xl p-12">
+                    <i class="fas fa-spinner fa-spin text-8xl text-[#92DEB5] mb-8"></i>
+                    <h3 class="text-3xl font-bold text-gray-400">Komandalar ýüklenýär...</h3>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Кнопка "Baş sahypa" — в новом стиле -->
+        <div class="text-center mt-20">
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-4 px-12 py-6 btn-primary rounded-full font-bold text-xl shadow-2xl hover:scale-105 transition-all duration-400">
+                <i class="fas fa-home text-2xl"></i>
+                Baş sahypa
+            </a>
+        </div>
+
+    </div>
 </div>
+
+<!-- Уведомление при копировании — в премиум стиле -->
+<script>
+    document.querySelectorAll('button[onclick*="clipboard"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-10 left-1/2 -translate-x-1/2 z-50 glass px-10 py-5 rounded-full border border-[#92DEB5]/50 text-[#92DEB5] font-bold text-lg shadow-2xl animate-pulse';
+            toast.innerHTML = '<i class="fas fa-check mr-3"></i> Kopiýa edildi!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2200);
+        });
+    });
+</script>
+
+<!-- Плавное открытие <details> -->
+<style>
+    details summary::-webkit-details-marker { display: none; }
+    details[open] > summary i { transform: rotate(180deg); }
+</style>
 {% endblock %}

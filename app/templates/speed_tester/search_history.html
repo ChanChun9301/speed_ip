@@ -1,50 +1,177 @@
 {% extends "layouts.html" %}
 {% load static %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="card rounded-lg">
-        <div class="card-header bg-success text-white">
-            <h1 class="mb-0 text-white"><i class="fas fa-history mr-2"></i> Soňky Gözleg Taryhy</h1>
+<div class="min-h-screen py-16 px-6">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Заголовок -->
+        <div class="text-center mb-16">
+            <h1 class="text-6xl md:text-8xl font-black text-gradient tracking-tight">
+                Gözleg Taryhy
+            </h1>
+            <p class="mt-6 text-2xl text-gray-400 max-w-3xl mx-auto">
+                Soňky Google dork gözlegleriň dolulygyna taryhy we netijeleri
+            </p>
         </div>
-        <div class="card-body p-4">
-            {% if history %}
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover bg-white rounded">
-                        <thead class="thead-light">
-                            <tr>
-                                <th>Gözleg Teksti</th>
-                                <th>Dork Komandasy</th>
-                                <th>Dolulygyna Gözleg Soragy</th>
-                                <th>Gözleg Wagty</th>
-                                <th>Netijeleriň Sany</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for result in history %}
-                                <tr>
-                                    <td>{{ result.text_input }}</td>
-                                    <td>{{ result.dork_command }}</td>
-                                    <td>{{ result.full_query }}</td>
-                                    <td><span class="text-muted">{{ result.search_date|date:"d.m.Y H:i:s" }}</span></td>
-                                    <td>
-                                        {% if result.results_count is not None %}
-                                            <span class="text-info">{{ result.results_count }}</span>
-                                        {% else %}
-                                            <span class="text-muted">Bellige alynmady</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <p class="lead">Gözleg taryhy boş.</p>
+
+        <!-- История есть -->
+        {% if history %}
+        <div class="glass rounded-3xl overflow-hidden border border-white/10 shadow-2xl neon-glow">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-white/5 backdrop-blur text-gray-300">
+                        <tr>
+                            <th class="px-8 py-6 font-bold text-[#92DEB5]">Wagty</th>
+                            <th class="px-8 py-6 font-bold text-[#92DEB5]">Açar söz</th>
+                            <th class="px-8 py-6 font-bold text-[#92DEB5]">Dork komandasy</th>
+                            <th class="px-8 py-6 font-bold text-[#92DEB5]">Dolulygyna sorag</th>
+                            <th class="px-8 py-6 font-bold text-[#92DEB5]">Netije sany</th>
+                            <th class="px-8 py-6 font-bold text-[#92DEB5]">Google-da aç</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/10">
+                        {% for entry in history %}
+                        <tr class="hover:bg-white/5 transition-all duration-300">
+                            <td class="px-8 py-6 font-mono text-sm text-gray-400">
+                                {{ entry.search_date|date:"d.m.Y" }}<br>
+                                <span class="text-xs">{{ entry.search_date|time:"H:i:s" }}</span>
+                            </td>
+
+                            <td class="px-8 py-6 text-gray-300">
+                                {% if entry.text_input %}
+                                    <span class="font-medium">{{ entry.text_input|truncatechars:40 }}</span>
+                                {% else %}
+                                    <span class="text-gray-600 italic">—</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="px-8 py-6">
+                                {% if entry.dork_command %}
+                                    <code class="bg-black/40 px-4 py-2 rounded-lg font-mono text-sm text-[#92DEB5] border border-[#92DEB5]/30">
+                                        {{ entry.dork_command }}
+                                    </code>
+                                {% else %}
+                                    <span class="text-gray-600">—</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="px-8 py-6 max-w-xs">
+                                <div class="group relative">
+                                    <code class="font-mono text-xs text-gray-400 break-all">
+                                        {{ entry.full_query|truncatechars:70 }}
+                                    </code>
+                                    <div class="absolute hidden group-hover:block bg-black/95 border border-[#92DEB5]/40 text-gray-300 p-5 rounded-xl shadow-2xl z-50 -top-2 left-0 whitespace-nowrap max-w-2xl">
+                                        {{ entry.full_query }}
+                                        <div class="absolute top-full left-8 w-0 h-0 border-l-8 border-r-8 border-t-8 border-transparent border-t-black/95"></div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-8 py-6 text-center">
+                                {% if entry.results_count is not None %}
+                                    <span class="inline-flex items-center px-5 py-3 bg-[#92DEB5]/10 border border-[#92DEB5]/40 rounded-full font-bold text-[#92DEB5]">
+                                        {{ entry.results_count }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-600 italic">—</span>
+                                {% endif %}
+                            </td>
+
+                            <td class="px-8 py-6 text-center">
+                                <a href="https://google.com/search?q={{ entry.full_query|urlencode }}" 
+                                   target="_blank"
+                                   class="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold rounded-full hover:scale-110 transition-all duration-300 shadow-lg text-sm">
+                                    <i class="fab fa-google"></i> Açmak
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-24 text-gray-500">
+                                <i class="fas fa-inbox text-8xl mb-6 opacity-30"></i><br>
+                                Gözleg taryhy boş
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- КРАСИВАЯ ПАГИНАЦИЯ -->
+            {% if is_paginated %}
+            <div class="flex justify-center items-center gap-3 py-10 border-t border-white/10 bg-white/5 backdrop-blur">
+                <!-- Предыдущая -->
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}" 
+                       class="px-6 py-4 glass border border-white/20 rounded-2xl hover:border-[#92DEB5]/60 hover:bg-white/10 transition-all duration-300">
+                        <i class="fas fa-chevron-left"></i> Öňki
+                    </a>
+                {% else %}
+                    <span class="px-6 py-4 text-gray-600 cursor-not-allowed opacity-50">
+                        <i class="fas fa-chevron-left"></i> Öňki
+                    </span>
+                {% endif %}
+
+                <!-- Номера страниц -->
+                {% for num in paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <span class="px-7 py-4 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-black rounded-2xl shadow-lg">
+                            {{ num }}
+                        </span>
+                    {% else %}
+                        <a href="?page={{ num }}"
+                           class="px-6 py-4 glass border border-white/20 rounded-2xl hover:border-[#92DEB5]/60 hover:bg-white/10 transition-all duration-300">
+                            {{ num }}
+                        </a>
+                    {% endif %}
+                {% endfor %}
+
+                <!-- Следующая -->
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}"
+                       class="px-6 py-4 glass border border-white/20 rounded-2xl hover:border-[#92DEB5]/60 hover:bg-white/10 transition-all duration-300">
+                        Indiki <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% else %}
+                    <span class="px-6 py-4 text-gray-600 cursor-not-allowed opacity-50">
+                        Indiki <i class="fas fa-chevron-right"></i>
+                    </span>
+                {% endif %}
+
+                <!-- Инфо о страницах -->
+                <span class="ml-8 text-gray-400 font-medium">
+                    {{ page_obj.start_index }}–{{ page_obj.end_index }} / {{ paginator.count }} gözleg
+                </span>
+            </div>
             {% endif %}
-            <div class="mt-3">
-                <a href="{% url 'home' %}" class="btn btn-primary rounded-pill"><i class="fas fa-arrow-left mr-2"></i> Yzyna</a>
+        </div>
+
+        <!-- История пустая -->
+        {% else %}
+        <div class="text-center py-32">
+            <div class="glass max-w-2xl mx-auto rounded-3xl p-16 border border-white/10">
+                <i class="fas fa-history text-9xl text-gray-700 mb-8 opacity-40"></i>
+                <h3 class="text-4xl font-bold text-gray-400 mb-4">Gözleg taryhy boş</h3>
+                <p class="text-gray-500 text-xl mb-10">
+                    Häzirlikçe hiç bir dork gözleg geçirilmedi
+                </p>
+                <a href="{% url 'home' %}" class="inline-flex items-center gap-5 px-14 py-7 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-black text-2xl rounded-full shadow-2xl hover:scale-110 transition-all duration-400">
+                    <i class="fas fa-plus text-3xl"></i>
+                    Ilkinji gözleg başlaň
+                </a>
             </div>
         </div>
+        {% endif %}
+
+        <!-- Кнопка домой -->
+        <div class="text-center mt-20">
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-2xl rounded-full shadow-2xl hover:scale-110 transition-all duration-400">
+                <i class="fas fa-home text-3xl"></i>
+                Baş sahypa
+            </a>
+        </div>
+
     </div>
 </div>
 {% endblock %}

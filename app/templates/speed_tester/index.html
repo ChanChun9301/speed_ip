@@ -1,244 +1,208 @@
 {% extends "layouts.html" %}
 {% load static %}
+
 {% block content %}
-<div class="container mt-5">
-    <div class="card rounded-lg">
-        <div class="card-header bg-success">
-            <h1 class="mb-0 text-center text-white">
-                <i class="fas fa-search mr-2"></i> Google-da gözlegleri geçirmegiň aňsat usuly
-            </h1>
-        </div>
-        <div class="card-body p-4">
-            <p class="lead text-center mb-3">
-                Gözleg sözlerini we dork komandalaryny goşup, ýöriteleşdirilen Google gözleg URL-lerini dörediň.
-            </p>
-            <a href="{% url 'com_list' %}" class="btn btn-outline-success mr-2 rounded-pill mb-3">
-                <i class="fas fa-list mr-1"></i> Komandalar barada
-            </a>
+<div class="min-h-screen flex items-center justify-center px-6 py-24">
+    <div class="w-full max-w-5xl">
 
-            <div id="inputContainer" class="mb-3"></div>
+        <!-- Главная карточка — чистый премиум glassmorphism -->
+        <div class="glass rounded-3xl p-10 md:p-14 shadow-2xl border border-white/10 neon-glow">
+            
+            <!-- Заголовок -->
+            <div class="text-center mb-12">
+                <h1 class="text-5xl md:text-7xl font-black text-gradient tracking-tight">
+                    Google Dork Builder
+                </h1>
+                <p class="mt-6 text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
+                    Ýöriteleşdirilen Google gözleg soraglaryny dörediň — güýçli operatorlar we açar sözler bilen
+                </p>
+            </div>
 
-            <div class="d-flex justify-content-center align-items-center mb-3">
-                <button id="addButton" class="btn btn-outline-success mr-2 rounded-pill">
-                    <i class="fas fa-plus mr-1"></i> Goşmak
+            <!-- Кнопка "Komandalar" -->
+            <div class="text-center mb-mb-10">
+                <a href="{% url 'com_list' %}" class="inline-flex items-center gap-3 px-8 py-4 glass border border-white/20 rounded-2xl text-lg font-medium hover:border-[#92DEB5]/50 hover:bg-white/5 transition-all duration-400 hover:scale-105">
+                    <i class="fas fa-book-open text-[#92DEB5]"></i>
+                    Dork komandalaryny görmek
+                </a>
+            </div>
+
+            <!-- Динамические поля ввода -->
+            <div id="inputContainer" class="space-y-5 mb-10"></div>
+
+            <!-- Кнопки управления -->
+            <div class="flex flex-wrap justify-center gap-5 mb-10">
+                <button id="addButton" class="flex items-center gap-3 px-8 py-5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl font-bold text-lg backdrop-blur hover:border-[#92DEB5]/60 transition-all hover:scale-105 hover:shadow-xl">
+                    <i class="fas fa-plus"></i> Goşmak
                 </button>
-                <button id="collectButton" class="btn btn-primary rounded-pill">
-                    <i class="fas fa-search mr-1"></i> Gözleg URL-ny döretmek
+                <button id="collectButton" class="flex items-center gap-4 px-10 py-5 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-xl rounded-2xl shadow-xl hover:shadow-[#92DEB5]/50 transition-all hover:scale-110">
+                    <i class="fas fa-search"></i> Gözleg URL-ny döretmek
                 </button>
             </div>
 
-            <div id="outputContainer" class="mt-3" style="display:none;">
-                <input type="text" id="output" class="form-control mb-2" readonly style="background-color:#e8f0fe; font-weight:bold;">
-                <button id="copyButton" class="btn btn-outline-success rounded-pill">Копировать ссылку</button>
-                <a id="openButton" class="btn btn-primary rounded-pill ml-2" target="_blank">Открыть Google</a>
-            </div>
+            <!-- Результат -->
+            <div id="outputContainer" class="hidden space-y-6 animate__animated animate__fadeIn">
+                <div class="p-6 bg-black/30 backdrop-blur-xl rounded-2xl border border-[#92DEB5]/30 neon-glow">
+                    <div class="flex items-center gap-4">
+                        <i class="fas fa-link text-[#92DEB5] text-2xl"></i>
+                        <input type="text" id="output" readonly 
+                               class="w-full px-5 py-4 bg-transparent border-0 text-[#92DEB5] font-mono text-lg focus:outline-none">
+                    </div>
+                </div>
 
+                <div class="flex flex-wrap justify-center gap-5">
+                    <button id="copyButton" class="px-10 py-5 glass border border-white/30 rounded-2xl font-bold text-lg hover:bg-white/10 hover:border-[#92DEB5] transition-all hover:scale-105">
+                        <i class="fas fa-copy mr-3"></i> Kopiýa etmek
+                    </button>
+                    <a id="openButton" target="_blank" class="px-12 py-5 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-xl rounded-2xl shadow-xl hover:shadow-[#92DEB5]/60 transition-all hover:scale-110">
+                        <i class="fab fa-google mr-3"></i> Google-da açmak
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-const inputContainer = document.getElementById('inputContainer');
-const addButton = document.getElementById('addButton');
-const collectButton = document.getElementById('collectButton');
-const outputContainer = document.getElementById('outputContainer');
-const outputInput = document.getElementById('output');
-const copyButton = document.getElementById('copyButton');
-const openButton = document.getElementById('openButton');
+    const inputContainer = document.getElementById('inputContainer');
+    const addButton = document.getElementById('addButton');
+    const collectButton = document.getElementById('collectButton');
+    const outputContainer = document.getElementById('outputContainer');
+    const outputInput = document.getElementById('output');
+    const copyButton = document.getElementById('copyButton');
+    const openButton = document.getElementById('openButton');
 
-async function fetchCommands() {
-    try {
-        const response = await fetch('/api/commands/');
-        const data = await response.json();
-        return data.commands;
-    } catch (error) {
-        console.error("Komandalary almakda ýalňyşlyk:", error);
-        return [];
-    }
-}
-
-
-async function populateSelect(selectElement) {
-    const commands = await fetchCommands();
-
-    commands.forEach(command => {
-        const option = document.createElement('option');
-        option.value = command.dork_command;
-        option.text = command.dork_command;
-
-        // Основное описание команды
-        let titleText = command.description || '';
-
-        // Примеры ExploitDB
-        if (command.examples && command.examples.length > 0) {
-            const examplesText = command.examples
-                .map(ex => `${ex.description} -> ${ex.url}`)
-                .join("\n");
-            titleText += "\nПримеры ExploitDB:\n" + examplesText;
+    // Получаем команды с сервера
+    async function fetchCommands() {
+        try {
+            const res = await fetch('/api/commands/');
+            const data = await res.json();
+            return data.commands || [];
+        } catch (err) {
+            console.error('Komandalar ýüklenmedi:', err);
+            return [];
         }
+    }
 
-        option.title = titleText;
-        selectElement.appendChild(option);
+    async function populateSelect(select) {
+        const commands = await fetchCommands();
+        const placeholder = document.createElement('option');
+        placeholder.value = ''; 
+        placeholder.textContent = 'Komanda saýlaň'; 
+        placeholder.disabled = true; 
+        placeholder.selected = true;
+        select.appendChild(placeholder);
+
+        commands.forEach(cmd => {
+            const opt = document.createElement('option');
+            opt.value = cmd.dork_command;
+            opt.textContent = cmd.dork_command;
+            opt.title = cmd.description || '';
+            select.appendChild(opt);
+        });
+    }
+
+    function populateOperatorSelect(select) {
+        const ops = [' ', 'OR', '&', '|', '+', '-'];
+        const placeholder = document.createElement('option');
+        placeholder.value = ' '; 
+        placeholder.textContent = 'Operator'; 
+        placeholder.disabled = true; 
+        placeholder.selected = true;
+        select.appendChild(placeholder);
+
+        ops.forEach(op => {
+            select.add(new Option(op || '(пробел)', op));
+        });
+    }
+
+    // Добавление новой строки
+    addButton.addEventListener('click', async () => {
+        const row = document.createElement('div');
+        row.className = 'grid grid-cols-1 md:grid-cols-12 gap-4 p-5 bg-white/5 rounded-2xl border border-white/10 hover:border-[#92DEB5]/30 transition-all';
+
+        const cmdSelect = document.createElement('select');
+        cmdSelect.className = 'md:col-span-3 px-5 py-4 bg-black/40 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#92DEB5]/50';
+        await populateSelect(cmdSelect);
+
+        const text1 = document.createElement('input');
+        text1.type = 'text';
+        text1.placeholder = 'Deňeşdirme (mysal: pdf)';
+        text1.className = 'md:col-span-3 px-5 py-4 bg-black/40 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#92DEB5]/50';
+
+        const opSelect = document.createElement('select');
+        opSelect.className = 'md:col-span-2 px-5 py-4 bg-black/40 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-[#92DEB5]/50';
+        populateOperatorSelect(opSelect);
+
+        const text2 = document.createElement('input');
+        text2.type = 'text';
+        text2.placeholder = 'Açar söz / domen';
+        text2.className = 'md:col-span-3 px-5 py-4 bg-black/40 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#92DEB5]/50';
+
+        const removeBtn = document.createElement('button');
+        removeBtn.innerHTML = '<i class="fas fa-trash-alt text-red-400"></i>';
+        removeBtn.className = 'md:col-span-1 flex items-center justify-center px-5 py-4 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition-all hover:scale-110';
+        removeBtn.onclick = () => row.remove();
+
+        row.append(cmdSelect, text1, opSelect, text2, removeBtn);
+        inputContainer.appendChild(row);
+
+        text1.focus();
     });
-}
 
+    // Главная кнопка — сборка запроса
+    collectButton.addEventListener('click', async () => {
+        const rows = inputContainer.querySelectorAll('div.grid');
+        const queryParts = [];
 
-function populateOperatorSelect(selectElement) {
-    const operators = [' ','&','|','+','-','OR'];
-    operators.forEach(operator => {
-        const option = document.createElement('option');
-        option.value = operator;
-        option.text = operator;
-        selectElement.appendChild(option);
-    });
-}
+        rows.forEach(row => {
+            const cmd   = row.children[0].value.trim();
+            const val1  = row.children[1].value.trim();   // ← было "val" → ошибка!
+            const op    = row.children[2].value || ' ';
+            const term  = row.children[3].value.trim();
 
-addButton.addEventListener('click', async () => {
-    const inputGroupWrapper = document.createElement('div');
-    inputGroupWrapper.className = 'd-flex align-items-center mb-2';
+            let part = '';
+            if (cmd && val1) part = `${cmd}:${val1}`;
+            else if (val1) part = val1;
 
-    const commandSelect = document.createElement('select');
-    commandSelect.className = 'form-control mr-2';
-    commandSelect.style.height = '50px';
-    const defaultCommandOption = document.createElement('option');
-    defaultCommandOption.value = '';
-    defaultCommandOption.text = 'Komandany saýlaň';
-    defaultCommandOption.disabled = true;
-    defaultCommandOption.selected = true;
-    commandSelect.appendChild(defaultCommandOption);
-    await populateSelect(commandSelect);
-
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.className = 'form-control mr-2';
-    textInput.style.height = '50px';
-    textInput.placeholder = 'Giriş meýdançasy';
-
-    const operatorSelect = document.createElement('select');
-    operatorSelect.className = 'form-control mr-2';
-    operatorSelect.style.height = '50px';
-    const defaultOperatorOption = document.createElement('option');
-    defaultOperatorOption.value = '';
-    defaultOperatorOption.text = 'Operator';
-    defaultOperatorOption.disabled = true;
-    defaultOperatorOption.selected = true;
-    operatorSelect.appendChild(defaultOperatorOption);
-    populateOperatorSelect(operatorSelect);
-
-    const textInput2 = document.createElement('input');
-    textInput2.type = 'text';
-    textInput2.className = 'form-control mr-2';
-    textInput2.style.height = '50px';
-    textInput2.placeholder = 'Açar söz';
-
-    const removeButton = document.createElement('button');
-    removeButton.type = 'button';
-    removeButton.className = 'btn btn-outline-danger rounded-pill';
-    removeButton.innerHTML = '<i class="fas fa-trash"></i>';
-    removeButton.addEventListener('click', () => inputGroupWrapper.remove());
-
-    inputGroupWrapper.appendChild(commandSelect);
-    inputGroupWrapper.appendChild(textInput);
-    inputGroupWrapper.appendChild(operatorSelect);
-    inputGroupWrapper.appendChild(textInput2);
-    inputGroupWrapper.appendChild(removeButton);
-
-    inputContainer.appendChild(inputGroupWrapper);
-
-    // Авто-фокус на новое поле
-    textInput.focus();
-});
-
-// CSRF helper
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let cookie of cookies) {
-            cookie = cookie.trim();
-            if (cookie.startsWith(name + '=')) {
-                cookieValue = cookie.substring(name.length + 1);
-                break;
+            if (term) {
+                if (part) part += op + term;
+                else part = term;
             }
-        }
-    }
-    return cookieValue;
-}
 
-collectButton.addEventListener('click', async () => {
-    const inputGroups = inputContainer.querySelectorAll('.d-flex.align-items-center');
-    let combinedQuery = '';
-    let textInputs = [];
-    let dorkCommands = [];
-
-    inputGroups.forEach(group => {
-        const commandSelect = group.querySelector('select:nth-child(1)');
-        const textInput = group.querySelector('input:nth-child(2)');
-        const operatorSelect = group.querySelector('select:nth-child(3)');
-        const textInput2 = group.querySelector('input:nth-child(4)');
-
-        let term = '';
-        let currentText = textInput.value.trim();
-        let currentCommand = commandSelect.value;
-        let currentText2 = textInput2.value.trim();
-
-        if (currentCommand && currentText) {
-            term = `${currentCommand}:${currentText}`;
-            dorkCommands.push(currentCommand);
-            textInputs.push(currentText);
-        } else if (currentText) {
-            term = `${currentText}`;
-            dorkCommands.push('');
-            textInputs.push(currentText);
-        }
-
-        if (term) {
-            combinedQuery += `${term} ${operatorSelect.value}${currentText2} `;
-        }
-    });
-
-    const trimmedQuery = combinedQuery.trim();
-    const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(trimmedQuery);
-
-    // Сохраняем на бэкенде
-    try {
-        const formData = new FormData();
-        formData.append('full_query', trimmedQuery);
-        formData.append('text_inputs', JSON.stringify(textInputs));
-        formData.append('dork_commands', JSON.stringify(dorkCommands));
-
-        const response = await fetch('/save_search/', {
-            method: 'POST',
-            headers: {'X-CSRFToken': getCookie('csrftoken')},
-            body: formData
+            if (part) queryParts.push(part);
         });
 
-        if (!response.ok) throw new Error('Сервер вернул ошибку');
+        const finalQuery = queryParts.join(' ').trim();
+        const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(finalQuery);
 
-        // Показать ссылку пользователю
+        // Сохраняем в историю (если есть view)
+        try {
+            await fetch('/save_search/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                                  document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+                },
+                body: new URLSearchParams({ 'full_query': finalQuery })
+            });
+        } catch (e) {
+            console.warn('Gözleg taryhy ýazylmady:', e);
+        }
+
+        // Показываем результат
         outputInput.value = googleUrl;
         openButton.href = googleUrl;
-        outputContainer.style.display = 'block';
-    } catch (error) {
-        outputInput.value = 'Ошибка при сохранении: ' + error;
-        outputContainer.style.display = 'block';
-    }
-});
-
-// Копировать ссылку
-copyButton.addEventListener('click', () => {
-    outputInput.select();
-    document.execCommand('copy');
-    alert('Ссылка скопирована в буфер обмена!');
-});
-</script>
-<script>
-    $(document).ready(function(){
-        $('[title]').tooltip({
-            placement: 'right',
-            trigger: 'hover'
-        });
+        outputContainer.classList.remove('hidden');
     });
-    
-</script>
+
+    // Копирование
+    copyButton.addEventListener('click', () => {
+        outputInput.select();
+        document.execCommand('copy');
+        const oldHTML = copyButton.innerHTML;
+        copyButton.innerHTML = '<i class="fas fa-check mr-3"></i> Kopiýa edildi!';
+        setTimeout(() => copyButton.innerHTML = oldHTML, 2000);
+    });
+</script>   
 {% endblock %}

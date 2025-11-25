@@ -1,0 +1,54 @@
+{% extends "layouts.html" %}
+{% load static %}
+
+{% block content %}
+<div class="min-h-screen py-20 px-6">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-16">
+            <h1 class="text-6xl md:text-8xl font-black text-gradient mb-6">
+                <i class="fas fa-code mr-6"></i> Base64 Tool
+            </h1>
+            <p class="text-2xl text-gray-400">Encode we Decode — bir basyşda</p>
+        </div>
+
+        <div class="glass rounded-3xl p-10 border border-white/10 shadow-2xl neon-glow">
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+                <div>
+                    <label class="text-xl text-gray-300 font-bold mb-4 block">Girizmek / Çykarma</label>
+                    {{ form.text }}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <button type="submit" name="action" value="encode" 
+                            class="btn bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-xl hover:scale-105 shadow-xl">
+                        <i class="fas fa-arrow-right"></i> ENCODE
+                    </button>
+                    <button type="submit" name="action" value="decode" 
+                            class="btn bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xl hover:scale-105 shadow-xl">
+                        <i class="fas fa-arrow-left"></i> DECODE
+                    </button>
+                </div>
+            </form>
+
+            {% if result %}
+            <div class="mt-10 p-8 bg-black/40 rounded-2xl border border-[#92DEB5]/40">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-2xl font-bold text-[#92DEB5]">Netije:</h3>
+                    <button onclick="copyToClipboard('{{ result|escapejs }}')" class="btn btn-ghost text-[#92DEB5] hover:bg-white/10">
+                        <i class="fas fa-copy"></i> Göçürmek
+                    </button>
+                </div>
+                <code id="result" class="block text-lg text-gray-300 font-mono break-all">{{ result }}</code>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+    alert("Göçürildi!");
+}
+</script>
+{% endblock %}

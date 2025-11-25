@@ -1,57 +1,118 @@
 {% extends "layouts.html" %}
 {% load static %}
+
 {% block content %}
-<div class="container mt-5">
-    <h1>Tizlik Synagynyň Netijeleri</h1>
-    {% if results %}
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Ugradyjyn IP Salgysy</th>
-                    <th>Ahyrky IP Salgy</th>
-                    <th>Ping (ms)</th>
-                    <th>Ýüklemek tizligi</th>
-                    <th>Ýüklemek tizligi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for result in results %}
-                    <tr>
-                        <td>{{ result.ip_address }}</td>
-                        <td>{{ result.destination_ip }}</td>
-                        <td>
-                            {% if result.ping_ms is not None %}
+<div class="min-h-screen py-16 px-6">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Заголовок -->
+        <div class="text-center mb-16">
+            <h1 class="text-5xl md:text-7xl font-black text-gradient tracking-tight">
+                Tor Tizligi Taryhy
+            </h1>
+            <p class="mt-6 text-xl text-gray-400 max-w-3xl mx-auto">
+                Soňky Tor ulgamy arkaly geçirilen tizlik synaglarynyň netijeleri
+            </p>
+        </div>
+
+        <!-- Таблица результатов -->
+        {% if results %}
+        <div class="glass rounded-3xl overflow-hidden border border-white/10 shadow-2xl neon-glow">
+            <div class="overflow-x-auto">
+                <table class="table table-zebra w-full text-lg">
+                    <thead class="bg-white/5 backdrop-blur text-gray-200">
+                        <tr>
+                            <th class="text-left font-bold text-[#92DEB5]">Wagty</th>
+                            <th class="text-left font-bold text-[#92DEB5]">Başlangyç IP</th>
+                            <th class="text-left font-bold text-[#92DEB5]">Çykyş IP (Tor)</th>
+                            <th class="text-center font-bold text-[#92DEB5]">Ping</th>
+                            <th class="text-center font-bold text-[#92DEB5]">Ýüklemek (↓)</th>
+                            <th class="text-center font-bold text-[#92DEB5]">Ýüklemek (↑)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="hover:bg-white/5 transition-all duration-300 border-b border-white/5">
+                            <td class="font-mono text-sm text-gray-400">
+                                {{ result.test_date|date:"d.m.Y" }}<br>
+                                <span class="text-xs">{{ result.test_date|time:"H:i:s" }}</span>
+                            </td>
+                            <td class="font-mono text-gray-300">
+                                {{ result.ip_address|default:"Ýok" }}
+                            </td>
+                            <td class="font-mono text-[#92DEB5] font-semibold">
+                                {{ result.destination_ip|default:"—" }}
+                            </td>
+                            <td class="text-center">
                                 {% if result.ping_ms == -1 %}
-                                    <span class="text-danger">Wagt gutardy</span>
+                                    <span class="badge badge-error">Wagt gutardy</span>
+                                {% elif result.ping_ms is not None %}
+                                    <span class="badge badge-success badge-lg">
+                                        {{ result.ping_ms|floatformat:1 }} ms
+                                    </span>
                                 {% else %}
-                                    <span class="text-info">{{ result.ping_ms|floatformat:2 }} ms</span>
+                                    <span class="badge badge-warning">Ýalňyşlyk</span>
                                 {% endif %}
-                            {% else %}
-                                <span class="text-danger">Ping wagtynda ýalňyşlyk</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if result.download_speed_kbps is not None %}
-                                <span class="text-success">{{ result.download_speed_kbps|floatformat:2 }} kbps</span>
-                            {% else %}
-                                <span class="text-warning">Kesgitlenmedi</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if result.upload_speed_kbps is not None %}
-                                <span class="text-primary">{{ result.upload_speed_kbps|floatformat:2 }} kbps</span>
-                            {% else %}
-                                <span class="text-warning">Kesgitlenmedi</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <a href="{% url 'speed_test' %}" class="btn btn-primary mt-3">Gaýtadan synag et</a>
-    {% else %}
-        <p>Görkezmäge netije ýok.</p>
-        <a href="{% url 'speed_test' %}" class="btn btn-primary mt-3">Synaga gaýt</a>
-    {% endif %}
+                            </td>
+                            <td class="text-center font-bold">
+                                {% if result.download_speed_kbps > 0 %}
+                                    <span class="text-success text-xl">
+                                        {% if result.download_speed_kbps > 1000 %}
+                                            {{ result.download_speed_kbps|div:1000|floatformat:2 }} Mbps
+                                        {% else %}
+                                            {{ result.download_speed_kbps|floatformat:0 }} kbps
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-500">—</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center font-bold">
+                                {% if result.upload_speed_kbps > 0 %}
+                                    <span class="text-info text-xl">
+                                        {% if result.upload_speed_kbps > 1000 %}
+                                            {{ result.upload_speed_kbps|div:1000|floatformat:2 }} Mbps
+                                        {% else %}
+                                            {{ result.upload_speed_kbps|floatformat:0 }} kbps
+                                        {% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-500">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Если результатов нет -->
+        {% else %}
+        <div class="text-center py-32">
+            <div class="glass max-w-2xl mx-auto rounded-3xl p-16 border border-white/10">
+                <i class="fas fa-tachometer-alt text-9xl text-gray-700 mb-8 opacity-40"></i>
+                <h3 class="text-4xl font-bold text-gray-400 mb-4">Häzire çenli synag geçirilmedi</h3>
+                <p class="text-gray-500 text-lg mb-10">Tor tizligini synap görüň we netijeleri şu ýerde görersiňiz</p>
+                
+                <a href="{% url 'speed_test' %}" class="inline-flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-xl rounded-full shadow-2xl hover:scale-110 transition-all duration-400 hover:shadow-[#92DEB5]/60">
+                    <i class="fas fa-play text-2xl"></i>
+                    Tizlik synagyny başlaň
+                </a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Кнопка "Gaýtadan synag et" (всегда внизу) -->
+        {% if results %}
+        <div class="text-center mt-16">
+            <a href="{% url 'speed_test' %}" class="inline-flex items-center gap-4 px-12 py-6 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-2xl rounded-full shadow-2xl hover:scale-110 transition-all duration-400 hover:shadow-[#92DEB5]/60">
+                <i class="fas fa-redo text-xl"></i>
+                Gaýtadan synag etmek
+            </a>
+        </div>
+        {% endif %}
+
+    </div>
 </div>
 {% endblock %}

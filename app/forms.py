@@ -18,15 +18,13 @@ class CustomLoginForm(AuthenticationForm):
             attrs={'class': 'form__input', 'placeholder': 'Parol'}))
 
 
-
-
 class CustomUserCreationForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput)
     password_confirm = forms.CharField(widget=forms.PasswordInput, label="Confirm Password")
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name') # Include the fields you want
+        fields = ('username', 'first_name', 'last_name')
 
     def clean_password_confirm(self):
         password = self.cleaned_data.get('password')
@@ -42,12 +40,14 @@ class CustomUserCreationForm(forms.ModelForm):
             user.save()
         return user
 
+
 class IPAddressForm(forms.Form):
     ip_addresses = forms.CharField(
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
         label='IP Salgylaryny Giriziň (her setirde bir):',
         help_text='Her IP salgysyny täze setirde giriziň.'
     )
+
 
 DORK_CHOICES = [
     ('', 'Выберите команду (необязательно)'),
@@ -56,9 +56,77 @@ DORK_CHOICES = [
     ('intitle:', 'intitle:'),
     ('intext:', 'intext:'),
     ('filetype:', 'filetype:'),
-    # Добавьте другие распространенные команды по мере необходимости
 ]
 
 class GoogleDorkingForm(forms.Form):
     text_input = forms.CharField(label='Поисковый запрос', max_length=255)
     dork_command = forms.ChoiceField(label='Команда Dorking', choices=DORK_CHOICES, required=False)
+
+# ============================================================
+# 🌐 НОВЫЕ ФОРМЫ (старые НЕ изменены)
+# ============================================================
+
+# ✔ Форма проверки ping
+class PingCheckForm(forms.Form):
+    ip_address = forms.GenericIPAddressField(
+        label="IP адрес для ping",
+        help_text="Введите IPv4 или IPv6"
+    )
+
+# ✔ Форма поиска ExploitExample по категории
+class ExploitFilterForm(forms.Form):
+    category = forms.CharField(
+        required=False,
+        label="Категория Exploit",
+        widget=forms.TextInput(attrs={'placeholder': 'Например: wordpress, apache, rce'})
+    )
+
+# ✔ Форма для фильтрации SpeedTestResult
+class SpeedTestFilterForm(forms.Form):
+    ip = forms.CharField(
+        required=False,
+        label="IP фильтр",
+        widget=forms.TextInput(attrs={'placeholder': 'Введите IP или часть IP'})
+    )
+    date_from = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Дата от"
+    )
+    date_to = forms.DateField(
+        required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Дата до"
+    )
+
+# ✔ Форма добавления новой команды
+class CommandCreateForm(forms.ModelForm):
+    class Meta:
+        model = Commands
+        fields = ["command", "description"]
+
+# ✔ Форма добавления нового примера Exploit
+class ExploitCreateForm(forms.ModelForm):
+    class Meta:
+        model = ExploitExample
+        fields = ["category", "description", "exploit_filename", "url"]
+
+class Base64Form(forms.Form):
+    text = forms.CharField(widget=forms.Textarea, label="Введите текст / Base64")
+
+class UrlForm(forms.Form):
+    text = forms.CharField(widget=forms.Textarea, label="Введите текст / URL encoded")
+
+class HashForm(forms.Form):
+    text = forms.CharField(widget=forms.Textarea, label="Введите текст")
+
+class TextToolForm(forms.Form):
+    text = forms.CharField(widget=forms.Textarea, required=False)
+    mode = forms.ChoiceField(choices=[
+        ('uuid', 'Генерация UUID'),
+        ('random', 'Случайная строка'),
+        ('stats', 'Статистика текста'),
+        ('upper', 'В верхний регистр'),
+        ('lower', 'В нижний регистр'),
+        ('uniq', 'Удалить дубликаты'),
+    ])

@@ -1,0 +1,42 @@
+{% extends "layouts.html" %}
+{% block content %}
+<div class="min-h-screen py-20 px-6">
+    <div class="max-w-5xl mx-auto">
+        <h1 class="text-center text-6xl md:text-8xl font-black text-gradient mb-6">
+            <i class="fas fa-file-alt mr-6"></i> Text Tools
+        </h1>
+
+        <div class="glass rounded-3xl p-10 border border-white/10 shadow-2xl neon-glow">
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="md:col-span-2">
+                        <label class="text-xl text-gray-300 font-bold mb-4 block">Tekst</label>
+                        {{ form.text }}
+                    </div>
+                    <div>
+                        <label class="text-xl text-gray-300 font-bold mb-4 block">Rejim</label>
+                        {{ form.mode|add_class:"select select-bordered w-full bg-black/40 border-white/20 text-white" }}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-xl w-full hover:scale-105">
+                    <i class="fas fa-play"></i> Ýerine ýetirmek
+                </button>
+            </form>
+
+            {% if result %}
+            <div class="mt-10 p-8 bg-black/40 rounded-2xl border border-[#92DEB5]/40">
+                <div class="flex justify-between mb-4">
+                    <h3 class="text-2xl font-bold text-[#92DEB5]">Netije:</h3>
+                    <button onclick="copyToClipboard('{{ result|linebreaksbr|escapejs }}')" class="btn btn-ghost text-[#92DEB5]">
+                        <i class="fas fa-copy"></i> Göçürmek
+                    </button>
+                </div>
+                <pre class="text-gray-300 font-mono text-lg whitespace-pre-wrap">{{ result }}</pre>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

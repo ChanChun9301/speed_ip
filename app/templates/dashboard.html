@@ -1,0 +1,134 @@
+{% extends "layouts.html" %}
+{% load static %}
+{% load humanize %}  <!-- для красивых чисел: 12,345 -->
+
+{% block content %}
+<div class="min-h-screen py-16 px-6">
+    <div class="max-w-7xl mx-auto">
+
+        <!-- Главный заголовок -->
+        <div class="text-center mb-16">
+            <h1 class="text-7xl md:text-9xl font-black text-gradient tracking-tight animate-pulse-slow">
+                <i class="fas fa-shield-alt mr-6"></i> PANEL
+            </h1>
+            <p class="mt-6 text-3xl text-gray-300 font-medium">
+                Tor kömekçi — статистика we dolandyryş paneli
+            </p>
+        </div>
+
+        <!-- Статистика карточками -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <!-- SpeedTest -->
+            <div class="glass rounded-3xl p-10 border border-white/10 hover:border-[#92DEB5]/60 transition-all duration-500 hover:scale-105 neon-glow">
+                <div class="flex items-center justify-between mb-6">
+                    <i class="fas fa-tachometer-alt text-6xl text-[#92DEB5]"></i>
+                    <span class="text-5xl font-black text-white">{{ total_tests|intcomma }}</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-300">Tizlik synaglary</h3>
+                <div class="mt-4 space-y-2 text-gray-400">
+                    <p><i class="fas fa-stopwatch mr-2"></i> Orta ping: <strong class="text-[#92DEB5]">{{ avg_ping|floatformat:1|default:"—" }} ms</strong></p>
+                    <p><i class="fas fa-download mr-2"></i> Orta ýüklemek: <strong class="text-green-400">{{ avg_download|floatformat:0|default:"—" }} kbps</strong></p>
+                    <p><i class="fas fa-upload mr-2"></i> Orta ýüklemek: <strong class="text-blue-400">{{ avg_upload|floatformat:0|default:"—" }} kbps</strong></p>
+                </div>
+            </div>
+
+            <!-- Dork Searches -->
+            <div class="glass rounded-3xl p-10 border border-white/10 hover:border-[#92DEB5]/60 transition-all duration-500 hover:scale-105 neon-glow">
+                <div class="flex items-center justify-between mb-6">
+                    <i class="fas fa-search text-6xl text-[#92DEB5]"></i>
+                    <span class="text-5xl font-black text-white">{{ search_count|intcomma }}</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-300">Google Dork gözlegleri</h3>
+                <p class="mt-4 text-gray-400">Soňky 24 sagatda: <strong class="text-[#92DEB5]">{{ searches_today }}</strong></p>
+            </div>
+
+            <!-- Traffic -->
+            <div class="glass rounded-3xl p-10 border border-white/10 hover:border-[#92DEB5]/60 transition-all duration-500 hover:scale-105 neon-glow">
+                <div class="flex items-center justify-between mb-6">
+                    <i class="fas fa-network-wired text-6xl text-[#92DEB5]"></i>
+                    <span class="text-5xl font-black text-white">{{ traffic_count|intcomma }}</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-300">Trafik loglary</h3>
+                <p class="mt-4 text-gray-400">Soňky minutda: <strong class="text-red-400">{{ traffic_last_minute }}</strong></p>
+            </div>
+
+            <!-- Exploits -->
+            <div class="glass rounded-3xl p-10 border border-white/10 hover:border-[#92DEB5]/60 transition-all duration-500 hover:scale-105 neon-glow">
+                <div class="flex items-center justify-between mb-6">
+                    <i class="fas fa-bomb text-6xl text-[#92DEB5]"></i>
+                    <span class="text-5xl font-black text-white">{{ exploits_count|intcomma }}</span>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-300">Exploit-DB bazasy</h3>
+                <p class="mt-4 text-gray-400">Verified: <strong class="text-green-400">{{ verified_exploits }}</strong></p>
+            </div>
+        </div>
+
+        <!-- Последние действия — в две колонки -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+
+            <!-- Последние SpeedTest -->
+            <div class="glass rounded-3xl p-10 border border-white/10 neon-glow">
+                <h2 class="text-4xl font-black text-gradient mb-8 flex items-center gap-4">
+                    <i class="fas fa-tachometer-alt"></i> Soňky tizlik synaglary
+                </h2>
+                {% if latest_tests %}
+                <div class="space-y-4">
+                    {% for test in latest_tests %}
+                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10 hover:border-[#92DEB5]/50 transition-all">
+                        <div>
+                            <code class="text-[#92DEB5] font-mono">{{ test.destination_ip|default:test.ip_address }}</code>
+                            <span class="text-gray-500 text-sm ml-3">→ {{ test.ping_ms|floatformat:0 }} ms</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-green-400 font-bold">{{ test.download_speed_kbps|floatformat:0 }} kbps ↓</span>
+                            <span class="text-blue-400 font-bold ml-3">{{ test.upload_speed_kbps|floatformat:0 }} kbps ↑</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-10">Synag geçirilmedi</p>
+                {% endif %}
+            </div>
+
+            <!-- Последние эксплойты -->
+            <div class="glass rounded-3xl p-10 border border-white/10 neon-glow">
+                <h2 class="text-4xl font-black text-gradient mb-8 flex items-center gap-4">
+                    <i class="fas fa-bomb"></i> Soňky Exploit-DB
+                </h2>
+                {% if latest_exploits %}
+                <div class="space-y-4">
+                    {% for ex in latest_exploits %}
+                    <div class="p-4 bg-white/5 rounded-xl border border-white/10 hover:border-[#92DEB5]/50 transition-all">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <span class="text-sm text-gray-500">{{ ex.platform }} • {{ ex.exploit_type }}</span>
+                                <p class="text-gray-300 font-medium mt-1">{{ ex.description|truncatechars:80 }}</p>
+                            </div>
+                            <a href="{{ ex.url }}" target="_blank" class="ml-4 text-[#92DEB5] hover:text-white transition-all">
+                                <i class="fas fa-external-link-alt text-2xl"></i>
+                            </a>
+                        </div>
+                        {% if ex.verified %}
+                        <span class="inline-block mt-2 px-3 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">VERIFIED</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-500 text-center py-10">Exploit ýok</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Кнопка домой (если вдруг не на главной) -->
+        <div class="text-center mt-20">
+            <a href="{% url 'home' %}" class="inline-flex items-center gap-5 px-14 py-7 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-black text-3xl rounded-full shadow-2xl hover:scale-110 transition-all duration-500">
+                <i class="fas fa-home"></i>
+                Baş sahypa
+            </a>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

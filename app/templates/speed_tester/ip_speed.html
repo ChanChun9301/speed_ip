@@ -1,125 +1,141 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title>Dynamic Input Fields</title>
-<style>
-  body {
-    font-family: sans-serif;
-    margin: 20px;
-  }
+{% extends "layouts.html" %}
+{% load static %}
 
-  #inputContainer {
-    margin-bottom: 15px;
-  }
+{% block content %}
+<div class="min-h-screen flex items-center justify-center px-6 py-24">
+    <div class="w-full max-w-4xl">
 
-  input[type="text"],
-  select {
-    padding: 8px;
-    margin-right: 10px;
-    margin-bottom: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Prevent padding from increasing the element's size */
-  }
+        <!-- Главная карточка -->
+        <div class="glass rounded-3xl p-2xl p-10 md:p-16 shadow-2xl border border-white/10 neon-glow">
 
-  button {
-    padding: 10px 15px;
-    margin-right: 10px;
-    border: none;
-    border-radius: 4px;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-    font-size: 1em;
-  }
+            <!-- Заголовок -->
+            <div class="text-center mb-14">
+                <h1 class="text-6xl md:text-8xl font-black text-gradient tracking-tight">
+                    Tor Tizligi Synagy
+                </h1>
+                <p class="mt-6 text-2xl text-gray-300">
+                    Häzirki Tor ulgamy arkaly internet tizligiňizi synap görüň
+                </p>
+            </div>
 
-  button:hover {
-    background-color: #0056b3;
-  }
+            <!-- Индикатор состояния -->
+            <div id="status" class="text-center mb-12">
+                <p class="text-xl text-gray-400" id="statusText">Synag başlaň...</p>
+                <div class="mt-6 flex justify-center">
+                    <div class="w-32 h-32 rounded-full border-8 border-white/10 border-t-[#92DEB5] animate-spin" id="spinner" hidden></div>
+                </div>
+            </div>
 
-  #output {
-    margin-top: 20px;
-    font-weight: bold;
-  }
-</style>
-</head>
-<body>
+            <!-- Результаты -->
+            <div id="results" class="hidden space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Ping -->
+                    <div class="text-center p-8 bg-black/40 rounded-2xl border border-[#92DEB5]/30 neon-glow">
+                        <i class="fas fa-stopwatch text-5xl text-[#92DEB5] mb-4"></i>
+                        <p class="text-gray-400 text-lg">Ping</p>
+                        <p class="text-4xl font-black text-white mt-2" id="ping">-</p>
+                    </div>
 
-<div id="inputContainer">
-  </div>
+                    <!-- Download -->
+                    <div class="text-center p-8 bg-black/40 rounded-2xl border border-[#92DEB5]/30 neon-glow">
+                        <i class="fas fa-download text-5xl text-[#92DEB5] mb-4"></i>
+                        <p class="text-gray-400 text-lg">Ýüklemek (Download)</p>
+                        <p class="text-4xl font-black text-white mt-2" id="download">-</p>
+                    </div>
 
-<button id="addButton">Add Input</button>
-<button id="collectButton">Collect All</button>
+                    <!-- Upload -->
+                    <div class="text-center p-8 bg-black/40 rounded-2xl border border-[#92DEB5]/30 neon-glow">
+                        <i class="fas fa-upload text-5xl text-[#92DEB5] mb-4"></i>
+                        <p class="text-gray-400 text-lg">Ýüklemek (Upload)</p>
+                        <p class="text-4xl font-black text-white mt-2" id="upload">-</p>
+                    </div>
+                </div>
 
-<p id="output"></p>
+                <!-- Дополнительная информация -->
+                <div class="mt-10 p-8 bg-white/5 rounded-2xl border border-white/10 text-center">
+                    <p class="text-gray-400 mb-3">Çykyş IP (Tor):</p>
+                    <code class="text-2xl font-mono text-[#92DEB5]" id="exitIp">-</code>
+                </div>
+            </div>
+
+            <!-- Кнопка запуска -->
+            <div class="text-center mt-14">
+                <button id="startButton" class="px-16 py-7 bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-2xl rounded-full shadow-2xl hover:scale-110 hover:shadow-[#92DEB5]/70 transition-all duration-500 flex items-center gap-5 mx-auto">
+                    <i class="fas fa-play text-3xl"></i>
+                    Tizligi synap görmek
+                </button>
+            </div>
+
+            <!-- Кнопка истории (всегда видна) -->
+            <div class="text-center mt-10">
+                <a href="{% url 'speed_test_history' %}" class="inline-flex items-center gap-3 px-8 py-4 glass border border-white/20 rounded-2xl text-lg font-medium hover:border-[#92DEB5]/50 hover:bg-white/5 transition-all duration-400">
+                    <i class="fas fa-history text-[#92DEB5]"></i>
+                    Geçmiş synaglary görmek
+                </a>
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <script>
-  const inputContainer = document.getElementById('inputContainer');
-  const addButton = document.getElementById('addButton');
-  const collectButton = document.getElementById('collectButton');
-  const outputParagraph = document.getElementById('output');
+    const startButton = document.getElementById('startButton');
+    const statusText = document.getElementById('statusText');
+    const spinner = document.getElementById('spinner');
+    const results = document.getElementById('results');
+    const pingEl = document.getElementById('ping');
+    const downloadEl = document.getElementById('download');
+    const uploadEl = document.getElementById('upload');
+    const exitIpEl = document.getElementById('exitIp');
 
-  // Function to fetch commands from the Django API
-  async function fetchCommands() {
-    try {
-      const response = await fetch('/api/commands/'); // Adjust the URL if needed
-      const data = await response.json();
-      return data.commands;
-    } catch (error) {
-      console.error("Error fetching commands:", error);
-      return [];
-    }
-  }
+    startButton.addEventListener('click', async () => {
+        // Сброс
+        results.classList.add('hidden');
+        spinner.hidden = false;
+        statusText.textContent = 'Tor arkaly tizlik synag geçirilýär...';
+        startButton.disabled = true;
+        startButton.innerHTML = '<i class="fas fa-spinner fa-spin text-3xl"></i> Synag dowam edýär...';
 
-  // Function to populate a select element with command options
-  async function populateSelect(selectElement) {
-    const commands = await fetchCommands();
-    commands.forEach(command => {
-      const option = document.createElement('option');
-      option.value = command.dork_command; // Use dork_command as the value
-      option.text = `${command.dork_command} - ${command.description}`; // Display both
-      selectElement.appendChild(option);
+        try {
+            const response = await fetch('/api/speedtest/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            });
+
+            const data = await response.json();
+
+            // Показ результатов
+            spinner.hidden = true;
+            results.classList.remove('hidden');
+
+            pingEl.textContent = data.ping_ms === -1 ? 'Wagt gutardy' : `${data.ping_ms.toFixed(1)} ms`;
+
+            downloadEl.textContent = data.download_speed_kbps > 1000 
+                ? `${(data.download_speed_kbps / 1000).toFixed(2)} Mbps` 
+                : `${data.download_speed_kbps.toFixed(0)} kbps`;
+
+            uploadEl.textContent = data.upload_speed_kbps > 1000 
+                ? `${(data.upload_speed_kbps / 1000).toFixed(2)} Mbps` 
+                : `${data.upload_speed_kbps.toFixed(0)} kbps`;
+
+            exitIpEl.textContent = data.destination_ip || 'Bilinmeýär';
+
+            statusText.textContent = 'Synag gutardy!';
+            startButton.innerHTML = '<i class="fas fa-redo text-3xl"></i> Gaýtadan synag';
+            startButton.disabled = false;
+
+        } catch (err) {
+            spinner.hidden = true;
+            statusText.textContent = 'Ýalňyşlyk ýüze çykdy. Tor ulanýarsyňyzmy?';
+            statusText.classList.add('text-red-');
+            startButton.innerHTML = '<i class="fas fa-exclamation-triangle text-3xl"></i> Gaýtadan synap görmek';
+            startButton.disabled = false;
+            console.error(err);
+        }
     });
-  }
-
-  addButton.addEventListener('click', async () => {
-    const textInput = document.createElement('input');
-    textInput.type = 'text';
-    textInput.placeholder = 'Enter text';
-
-    const selectElement = document.createElement('select');
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.text = 'Select a Command';
-    defaultOption.disabled = true;
-    defaultOption.selected = true;
-    selectElement.appendChild(defaultOption);
-
-    await populateSelect(selectElement); // Populate the select options
-
-    const lineBreak = document.createElement('br');
-
-    inputContainer.appendChild(textInput);
-    inputContainer.appendChild(selectElement);
-    inputContainer.appendChild(lineBreak);
-  });
-
-  collectButton.addEventListener('click', () => {
-    const allInputs = inputContainer.querySelectorAll('input[type="text"]');
-    const allSelects = inputContainer.querySelectorAll('select');
-    let combinedText = '';
-
-    allInputs.forEach((input, index) => {
-      if (allSelects[index]) {
-        combinedText += `${allSelects[index].value}>${input.value} `;
-      } else {
-        combinedText += `${input.value} `;
-      }
-    });
-
-    outputParagraph.textContent = 'Collected Data: ' + combinedText.trim();
-  });
 </script>
-
-</body>
-</html>
+{% endblock %}

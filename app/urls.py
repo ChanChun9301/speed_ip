@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import *
+from .utils import *
 
 urlpatterns = [
-    path('', first_visit, name='first_visit'),
+    path('', dashboard_view, name='first_visit'),
     path('home/', index, name='home'),
     path('speed_test/', speed_test_view, name='speed_test'),
     path('history/', history_view, name='speed_test_history'),
@@ -16,8 +17,15 @@ urlpatterns = [
     path('auth/', auth_view, name='auth'),
     path('login/', login_view, name='login'),
     path('register/', register_view, name='register'),
+    path('logout/', register_view, name='logout'),
 
     path('speed-test-results/', speed_test_results_list, name='speed_test_results_list'),
     path('speed-test-results/<int:result_id>/', speed_test_results_detail, name='speed_test_results_detail'),
+
+    path('base64-tool/', base64_tool, name='base64_tool'),
+    path('url-tool/', url_tool, name='url_tool'),
+    path('hash-tool/', hash_tool, name='hash_tool'),
+    path('text-tools/', text_tools, name='text_tools'),
+    path('ping-check/', ping_check, name='ping_check'),
 
 ]
