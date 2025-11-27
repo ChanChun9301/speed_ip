@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 from django.db.models import Avg
 from django.contrib.auth.decorators import login_required
 
-@login_required
+@login_required(login_url='/login/')
 def dashboard_view(request):
     # SpeedTest статистика
     speed_tests = SpeedTestResult.objects.all()
@@ -227,26 +227,49 @@ def save_search(request):
     if request.method != 'POST':
         return JsonResponse({'status': 'error', 'message': 'Только POST'}, status=405)
 
-    try:
-        full_query = request.POST.get('full_query')
-        text_inputs = json.loads(request.POST.get('text_inputs'))
-        dork_commands = json.loads(request.POST.get('dork_commands'))
+    print('!!!!',request.POST)
 
-        SearchQuery.objects.bulk_create([
-            SearchQuery(
+    try:
+        full_query = request.POST.get('full_query', '').strip()
+        if not full_query:
+            return JsonResponse({'status': 'error', 'message': 'full_query пустой'}, status=400)
+
+        # Получение массивов из POST
+        text_inputs = json.loads(request.POST.get('text_inputs', '[]'))
+        dork_commands = json.loads(request.POST.get('dork_commands', '[]'))
+
+        # Если клиент прислал пустые массивы — значит сохраняем только full_query
+        if not text_inputs and not dork_commands:
+            SearchQuery.objects.create(
                 user=request.user,
-                text_input=t.strip(),
-                dork_command=c.strip(),
-                full_query=full_query.strip()
+                text_input='',
+                dork_command='',
+                full_query=full_query
             )
-            for t, c in zip(text_inputs, dork_commands)
-        ])
+            return JsonResponse({'status': 'success'})
+
+        if len(text_inputs) != len(dork_commands):
+            return JsonResponse({
+                'status': 'error',
+                'message': 'Размеры text_inputs и dork_commands не совпадают'
+            }, status=400)
+
+        objects = []
+
+        for text, dork in zip(text_inputs, dork_commands):
+            objects.append(SearchQuery(
+                user=request.user,
+                text_input=(text or '').strip(),
+                dork_command=(dork or '').strip(),
+                full_query=full_query
+            ))
+
+        SearchQuery.objects.bulk_create(objects)
 
         return JsonResponse({'status': 'success'})
 
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-
 
 @login_required
 def search_history_view(request):

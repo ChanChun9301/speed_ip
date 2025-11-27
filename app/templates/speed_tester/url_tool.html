@@ -10,9 +10,13 @@
             <form method="post" class="space-y-8">
                 {% csrf_token %}
                 <div>
-                    <label class="text-xl text-gray-300 font-bold mb-4 block">URL / Tekst</label>
+                    <label class="text-xl text-gray-300 font-bold mb-2 block">URL / Tekst</label>
                     {{ form.text }}
+                    <p class="text-gray-400 text-sm mt-1">
+                        Введите сюда текст или URL, который хотите кодировать/декодировать.
+                    </p>
                 </div>
+                
 
                 <div class="grid grid-cols-2 gap-6">
                     <button type="submit" name="action" value="encode" class="btn bg-gradient-to-r from-[#92DEB5] to-[#6ab88a] text-black font-bold text-xl">

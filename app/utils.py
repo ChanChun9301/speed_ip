@@ -33,18 +33,23 @@ def base64_tool(request):
 
 
 import urllib.parse
+import base64
+from django.shortcuts import render
+from .forms import UrlForm
 
 def url_tool(request):
     result = None
     mode = None
+    result_b64 = None
+    result_b64_decoded = None
 
     if request.method == "POST":
         form = UrlForm(request.POST)
         if form.is_valid():
             text = form.cleaned_data["text"]
-            action = form.cleaned_data.get("action")
+            action = request.POST.get("action")  # Читаем прямо из POST
 
-            # Если выбрана ручная опция
+            # Ручной режим
             if action == "encode":
                 result = urllib.parse.quote(text)
                 mode = "encode"
@@ -52,7 +57,7 @@ def url_tool(request):
                 result = urllib.parse.unquote(text)
                 mode = "decode"
             else:
-                # Авто-режим: определяем по содержимому
+                # Авто-режим
                 if "%" in text or "+" in text:
                     result = urllib.parse.unquote(text)
                     mode = "decode"
@@ -60,17 +65,15 @@ def url_tool(request):
                     result = urllib.parse.quote(text)
                     mode = "encode"
 
-            # Base64 добавляем для мультифункциональности
+            # Base64
             result_b64 = base64.urlsafe_b64encode(text.encode()).decode()
-            result_b64_decoded = None
             try:
                 result_b64_decoded = base64.urlsafe_b64decode(text.encode()).decode()
             except Exception:
-                pass  # если не Base64, пропускаем
+                result_b64_decoded = None
 
     else:
         form = UrlForm()
-        result_b64 = result_b64_decoded = None
 
     return render(request, "speed_tester/url_tool.html", {
         "form": form,

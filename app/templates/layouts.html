@@ -1,4 +1,5 @@
 {% load static %}
+{% load widget_tweaks %}
 <!DOCTYPE html>
 <html lang="tm" class="scroll-smooth">
 <head>
@@ -216,10 +217,8 @@
     </div>
 </div>
 
-<!-- Отступ под фиксированный навбар -->
-<div class="h-24"></div>
 
-    <main class="relative z-10 container mx-auto px-6 pt-28 pb-16 min-h-screen">
+    <main class="relative z-10 container mx-auto px-6  pb-6 min-h-screen">
         {% block content %}
         {% endblock %}
     </main>

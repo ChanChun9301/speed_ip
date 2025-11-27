@@ -2,11 +2,11 @@
 {% load static %}
 
 {% block content %}
-<div class="min-h-screen flex items-center justify-center px-6 py-24">
+<div class="min-h-screen flex items-center justify-center px-6 py-4">
     <div class="w-full max-w-5xl">
 
         <!-- Главная карточка — чистый премиум glassmorphism -->
-        <div class="glass rounded-3xl p-10 md:p-14 shadow-2xl border border-white/10 neon-glow">
+        <div class="glass rounded-3xl p-4 md:p-14 shadow-2xl border border-white/10 neon-glow">
             
             <!-- Заголовок -->
             <div class="text-center mb-12">
@@ -152,49 +152,63 @@
     // Главная кнопка — сборка запроса
     collectButton.addEventListener('click', async () => {
         const rows = inputContainer.querySelectorAll('div.grid');
+    
+        const textInputs = [];
+        const dorkCommands = [];
         const queryParts = [];
-
+    
         rows.forEach(row => {
-            const cmd   = row.children[0].value.trim();
-            const val1  = row.children[1].value.trim();   // ← было "val" → ошибка!
-            const op    = row.children[2].value || ' ';
-            const term  = row.children[3].value.trim();
-
-            let part = '';
-            if (cmd && val1) part = `${cmd}:${val1}`;
-            else if (val1) part = val1;
-
+            const cmd  = row.children[0].value.trim();  // dork
+            const val  = row.children[1].value.trim();  // text input
+            const op   = row.children[2].value || '';   // operator
+            const term = row.children[3].value.trim();  // next term
+    
+            dorkCommands.push(cmd || "");
+            textInputs.push(val || "");
+    
+            let part = "";
+    
+            if (cmd && val)       part = `${cmd}:${val}`;
+            else if (val)         part = val;
+    
             if (term) {
                 if (part) part += op + term;
                 else part = term;
             }
-
+    
             if (part) queryParts.push(part);
         });
-
-        const finalQuery = queryParts.join(' ').trim();
-        const googleUrl = 'https://www.google.com/search?q=' + encodeURIComponent(finalQuery);
-
-        // Сохраняем в историю (если есть view)
+    
+        // Сбор финального гугл‑дока
+        const finalQuery = queryParts.join(" ").trim();
+        const googleUrl = "https://www.google.com/search?q=" + encodeURIComponent(finalQuery);
+    
+        // Сохранение истории dorkов
         try {
-            await fetch('/save_search/', {
-                method: 'POST',
+            await fetch("/save_search/", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                                  document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")?.value ||
+                                   document.cookie.match(/csrftoken=([^;]+)/)?.[1] ||
+                                   ""
                 },
-                body: new URLSearchParams({ 'full_query': finalQuery })
+                body: new URLSearchParams({
+                    full_query: finalQuery,
+                    text_inputs: JSON.stringify(textInputs),
+                    dork_commands: JSON.stringify(dorkCommands)
+                })
             });
         } catch (e) {
-            console.warn('Gözleg taryhy ýazylmady:', e);
+            console.warn("Gözleg taryhy ýazylmady:", e);
         }
-
-        // Показываем результат
+    
+        // UI вывод результата
         outputInput.value = googleUrl;
         openButton.href = googleUrl;
-        outputContainer.classList.remove('hidden');
+        outputContainer.classList.remove("hidden");
     });
+    
 
     // Копирование
     copyButton.addEventListener('click', () => {
